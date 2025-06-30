@@ -129,9 +129,4 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media') # Lembre-se, isso é para desenvolvimento local
 
-
-# ==============================================================================
-# CONFIGURAÇÕES PADRÃO
-# ==============================================================================
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
