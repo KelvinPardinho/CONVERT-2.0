@@ -1,0 +1,15 @@
+from django.contrib import admin
+from django.urls import path, include
+from . import views  # Certifique-se de ter um views.py com a função home
+from django.conf import settings
+from django.conf.urls.static import static
+
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', views.home, name='home'),  # Página inicial
+    path('blog/', include('blog.urls')),
+     path('tools/', include('converter.urls')),
+]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

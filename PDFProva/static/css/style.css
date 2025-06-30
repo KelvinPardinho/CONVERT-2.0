@@ -1,0 +1,158 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #222;
+}
+
+header {
+    background: #0d6efd !important; /* Azul Bootstrap */
+    color: #ffffff;
+    padding: 0px 0;
+    text-align: center;
+}
+
+h1 {
+    margin: 0;
+}
+
+.container {
+    width: 80%;
+    margin: auto;
+    overflow: hidden;
+}
+
+footer {
+    background: #35424a;
+    color: #ffffff;
+    text-align: center;
+    padding: 10px 0;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+.button {
+    display: inline-block;
+    font-size: 16px;
+    color: #ffffff;
+    background: #e8491d;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.button:hover {
+    background: #c0392b;
+}
+
+/* --- MODO ESCURO --- */
+body.dark-mode {
+    background-color: #181a1b !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode header {
+    background: #0d6efd !important; /* Mantém azul no dark mode */
+    color: #fff !important;
+}
+
+body.dark-mode footer {
+    background: #23272b !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .container,
+body.dark-mode main,
+body.dark-mode .bg-light,
+body.dark-mode .bg-white {
+    background-color: #23272b !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .card {
+    background-color: #23272b !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+}
+
+body.dark-mode .navbar.bg-primary,
+.navbar.bg-primary {
+    background-color: #0d6efd !important;
+    color: #fff !important;
+    border-bottom: none !important;
+}
+
+.navbar {
+    box-shadow: none !important;
+    border: none !important;
+}
+
+body.dark-mode .navbar .container,
+.navbar .container,
+body.dark-mode .navbar .container-fluid,
+.navbar .container-fluid {
+    background: transparent !important;
+}
+
+body.dark-mode .btn,
+body.dark-mode .button {
+    background: #444 !important;
+    color: #e0e0e0 !important;
+    border-color: #888 !important;
+}
+
+body.dark-mode .btn:hover,
+body.dark-mode .button:hover {
+    background: #666 !important;
+    color: #fff !important;
+}
+
+body.dark-mode .btn-outline-light {
+    color: #fff !important;
+    border-color: #fff !important;
+}
+
+body.dark-mode .btn-outline-light:hover {
+    background: #fff !important;
+    color: #23272b !important;
+}
+
+body.dark-mode .alert {
+    background-color: #222 !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+}
+
+body.dark-mode .form-control,
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+    background-color: #23272b !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode input:focus,
+body.dark-mode textarea:focus,
+body.dark-mode select:focus {
+    background-color: #181a1b !important;
+    color: #fff !important;
+    border-color: #888 !important;
+}
+
+body.dark-mode .file-info {
+    background-color: #222 !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+}
+.icon {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    background: url("static/img/pdf.png") no-repeat center center;
+    background-size: contain;
+    vertical-align: middle;
+}

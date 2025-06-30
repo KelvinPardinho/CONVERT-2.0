@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Blog - PDFProva{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-blog text-info me-3"></i>Blog Técnico
+                </h1>
+                <p class="lead text-muted">
+                    Artigos, tutoriais e novidades sobre documentos digitais e assinatura eletrônica
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search Section -->
+<section class="py-4 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="input-group input-group-lg">
+                    <input type="text" class="form-control" placeholder="Buscar artigos..." id="searchInput">
+                    <button class="btn btn-primary" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Article -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 mb-4">
+                <h2 class="fw-bold">Artigo em Destaque</h2>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <span class="badge bg-primary mb-2">Destaque</span>
+                                <h3 class="card-title mb-3">
+                                    Como Assinar PDF com Validade Jurídica: Guia Completo 2024
+                                </h3>
+                                <p class="card-text text-muted mb-3">
+                                    Aprenda tudo sobre assinatura digital de documentos PDF com certificado ICP-Brasil. 
+                                    Este guia completo explica os tipos de certificado, processo de assinatura e 
+                                    validade legal dos documentos assinados digitalmente.
+                                </p>
+                                <div class="d-flex align-items-center text-muted mb-3">
+                                    <i class="fas fa-calendar me-2"></i>
+                                    <span class="me-3">15 de Dezembro, 2024</span>
+                                    <i class="fas fa-clock me-2"></i>
+                                    <span class="me-3">8 min de leitura</span>
+                                    <i class="fas fa-eye me-2"></i>
+                                    <span>1.2k visualizações</span>
+                                </div>
+                                <button class="btn btn-primary" onclick="showComingSoon()">
+                                    Ler Artigo Completo
+                                </button>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <i class="fas fa-file-signature fa-5x text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Categories -->
+<section class="py-4 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 mb-3">
+                <h4 class="fw-bold">Categorias</h4>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-outline-primary active" onclick="filterByCategory('all', event)">
+                        <i class="fas fa-th-large me-1"></i>Todos
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="filterByCategory('assinatura', event)">
+                        <i class="fas fa-signature me-1"></i>Assinatura Digital
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="filterByCategory('conversao', event)">
+                        <i class="fas fa-tools me-1"></i>Conversão PDF
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="filterByCategory('juridico', event)">
+                        <i class="fas fa-gavel me-1"></i>Aspectos Jurídicos
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="filterByCategory('tutorial', event)">
+                        <i class="fas fa-graduation-cap me-1"></i>Tutoriais
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Articles Grid -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 mb-4">
+                <h2 class="fw-bold">Artigos Recentes</h2>
+            </div>
+        </div>
+        
+        <div class="row g-4" id="articlesGrid">
+            <!-- Article 1 -->
+            <div class="col-lg-4 col-md-6" data-category="assinatura">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <span class="badge bg-success mb-2">Assinatura Digital</span>
+                        <h5 class="card-title">Certificado A1 vs A3: Qual Escolher?</h5>
+                        <p class="card-text text-muted">
+                            Entenda as principais diferenças entre certificados A1 e A3 e saiba qual é a melhor opção para suas necessidades.
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center text-muted small">
+                            <span><i class="fas fa-calendar me-1"></i>10 Dez 2024</span>
+                            <span><i class="fas fa-clock me-1"></i>5 min</span>
+                        </div>
+                        <button class="btn btn-outline-primary mt-3" onclick="showComingSoon()">
+                            Ler Mais
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Article 2 -->
+            <div class="col-lg-4 col-md-6" data-category="conversao">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <span class="badge bg-warning mb-2">Conversão PDF</span>
+                        <h5 class="card-title">Como Comprimir PDF sem Perder Qualidade</h5>
+                        <p class="card-text text-muted">
+                            Técnicas avançadas para reduzir o tamanho de arquivos PDF mantendo a qualidade dos documentos.
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center text-muted small">
+                            <span><i class="fas fa-calendar me-1"></i>8 Dez 2024</span>
+                            <span><i class="fas fa-clock me-1"></i>6 min</span>
+                        </div>
+                        <button class="btn btn-outline-primary mt-3" onclick="showComingSoon()">
+                            Ler Mais
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Article 3 -->
+            <div class="col-lg-4 col-md-6" data-category="juridico">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <span class="badge bg-danger mb-2">Aspectos Jurídicos</span>
+                        <h5 class="card-title">Marco Legal das Assinaturas Eletrônicas no Brasil</h5>
+                        <p class="card-text text-muted">
+                            Conheça a legislação brasileira sobre documentos digitais e assinaturas eletrônicas.
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center text-muted small">
+                            <span><i class="fas fa-calendar me-1"></i>5 Dez 2024</span>
+                            <span><i class="fas fa-clock me-1"></i>10 min</span>
+                        </div>
+                        <button class="btn btn-outline-primary mt-3" onclick="showComingSoon()">
+                            Ler Mais
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Article 4 -->
+            <div class="col-lg-4 col-md-6" data-category="tutorial">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <span class="badge bg-info mb-2">Tutorial</span>
+                        <h5 class="card-title">Passo a Passo: Dividindo PDFs por Páginas</h5>
+                        <p class="card-text text-muted">
+                            Tutorial completo para extrair páginas específicas de documentos PDF de forma eficiente.
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center text-muted small">
+                            <span><i class="fas fa-calendar me-1"></i>3 Dez 2024</span>
+                            <span><i class="fas fa-clock me-1"></i>4 min</span>
+                        </div>
+                        <button class="btn btn-outline-primary mt-3" onclick="showComingSoon()">
+                            Ler Mais
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Article 5 -->
+            <div class="col-lg-4 col-md-6" data-category="assinatura">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <span class="badge bg-success mb-2">Assinatura Digital</span>
+                        <h5 class="card-title">Integrando Assinatura Digital em Workflows</h5>
+                        <p class="card-text text-muted">
+                            Como implementar processos de assinatura digital em fluxos de trabalho empresariais.
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center text-muted small">
+                            <span><i class="fas fa-calendar me-1"></i>1 Dez 2024</span>
+                            <span><i class="fas fa-clock me-1"></i>7 min</span>
+                        </div>
+                        <button class="btn btn-outline-primary mt-3" onclick="showComingSoon()">
+                            Ler Mais
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Article 6 -->
+            <div class="col-lg-4 col-md-6" data-category="conversao">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <span class="badge bg-warning mb-2">Conversão PDF</span>
+                        <h5 class="card-title">Unindo Múltiplos PDFs: Melhores Práticas</h5>
+                        <p class="card-text text-muted">
+                            Dicas e técnicas para combinar documentos PDF mantendo a estrutura e qualidade.
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center text-muted small">
+                            <span><i class="fas fa-calendar me-1"></i>28 Nov 2024</span>
+                            <span><i class="fas fa-clock me-1"></i>5 min</span>
+                        </div>
+                        <button class="btn btn-outline-primary mt-3" onclick="showComingSoon()">
+                            Ler Mais
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter Section -->
+<section class="py-5 bg-primary text-white">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-6">
+                <h3 class="fw-bold mb-3">
+                    <i class="fas fa-envelope me-2"></i>Fique Atualizado
+                </h3>
+                <p class="mb-4">
+                    Receba os melhores artigos sobre documentos digitais diretamente no seu email
+                </p>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="input-group input-group-lg">
+                            <input type="email" class="form-control" placeholder="Seu melhor email" id="newsletterEmail">
+                            <button class="btn btn-warning" type="button" onclick="subscribeNewsletter()">
+                                <i class="fas fa-paper-plane me-2"></i>Inscrever
+                            </button>
+                        </div>
+                        <small class="d-block mt-2 opacity-75">
+                            Sem spam. Cancele a qualquer momento.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', function() {
+        // Search functionality will be implemented in future iterations
+        console.log('Searching for:', this.value);
+    });
+});
+
+function filterByCategory(category, event) {
+    const articles = document.querySelectorAll('#articlesGrid [data-category]');
+    const buttons = document.querySelectorAll('button[onclick*="filterByCategory"]');
+    
+    // Update active button
+    buttons.forEach(btn => btn.classList.remove('active'));
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+    
+    // Filter articles
+    articles.forEach(article => {
+        if (category === 'all' || article.dataset.category === category) {
+            article.style.display = 'block';
+        } else {
+            article.style.display = 'none';
+        }
+    });
+}
+
+function showComingSoon() {
+    alert('Sistema de blog será implementado na Etapa 6 do projeto com CRUD completo de postagens!');
+}
+
+function subscribeNewsletter() {
+    const email = document.getElementById('newsletterEmail').value;
+    if (!email) {
+        alert('Por favor, digite um email válido.');
+        return;
+    }
+    
+    if (!email.includes('@')) {
+        alert('Por favor, digite um email válido.');
+        return;
+    }
+    
+    alert('Funcionalidade de newsletter será implementada na Etapa 5 com integração de email!');
+    document.getElementById('newsletterEmail').value = '';
+}
+</script>
+{% endblock %}

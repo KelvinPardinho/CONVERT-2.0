@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}PDFProva - Conversão e Assinatura Digital de PDFs{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="py-5 bg-gradient">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">
+                    Converta e Assine PDFs com <span class="text-danger">Validade Jurídica</span>
+                </h1>
+                <p class="lead mb-4">
+                    Plataforma completa para manipulação de documentos PDF com assinatura digital certificada e ferramentas profissionais de conversão.
+                </p>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{% url 'converter_index' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-tools me-2"></i>Converter Agora
+                    </a>
+                    <a href="{% url 'sign_index' %}" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-signature me-2"></i>Assinar Documento
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <img src="static/img/pdf.png" alt="PDF" style="height:110px;">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="fw-bold">Principais Funcionalidades</h2>
+                <p class="text-muted">Tudo que você precisa para trabalhar com PDFs de forma profissional</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <!-- PDF Conversion Tools -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-tools fa-2x text-primary"></i>
+                        </div>
+                        <h5 class="card-title">Ferramentas de Conversão</h5>
+                        <p class="card-text text-muted">
+                            Unir, dividir, comprimir, rotacionar e proteger PDFs com senha
+                        </p>
+                        <a href="{% url 'converter_index' %}" class="btn btn-outline-primary">
+                            Explorar Ferramentas
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Digital Signature -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-signature fa-2x text-success"></i>
+                        </div>
+                        <h5 class="card-title">Assinatura Digital</h5>
+                        <p class="card-text text-muted">
+                            Assinatura com certificado A1/A3 e validade jurídica completa
+                        </p>
+                        <a href="{% url 'sign_index' %}" class="btn btn-outline-success">
+                            Assinar Documento
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-shield-alt fa-2x text-warning"></i>
+                        </div>
+                        <h5 class="card-title">Segurança Total</h5>
+                        <p class="card-text text-muted">
+                            Seus documentos são processados com máxima segurança e privacidade
+                        </p>
+                        <a href="#" class="btn btn-outline-warning">
+                            Saiba Mais
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Blog & Resources -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon mb-3">
+                            <i class="fas fa-blog fa-2x text-info"></i>
+                        </div>
+                        <h5 class="card-title">Blog Técnico</h5>
+                        <p class="card-text text-muted">
+                            Artigos e tutoriais sobre documentos digitais e assinatura eletrônica
+                        </p>
+                        <a href="{% url 'blog_index' %}" class="btn btn-outline-info">
+                            Ler Artigos
+
+{% endblock %}                        
