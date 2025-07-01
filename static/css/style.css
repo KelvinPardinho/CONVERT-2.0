@@ -1,20 +1,31 @@
+/* static/css/style.css (VERSÃO OTIMIZADA E COM NOVAS CORES) */
+
+/* --- 1. DEFINIÇÃO DE VARIÁVEIS DE COR (TEMA CLARO) --- */
+:root {
+    --bg-color: #f4f4f4; /* Fundo principal */
+    --text-color: #222; /* Texto principal */
+    --card-bg-color: #ffffff; /* Fundo de cards e elementos */
+    --card-border-color: #dee2e6; /* Borda sutil */
+    
+    /* Cores da Navbar inspiradas no seu logo */
+    --navbar-bg-color: #2D2D34;      /* Cinza escuro do texto do logo */
+    --navbar-text-color: #E0E0E0;   /* Cinza claro para links */
+    --navbar-text-hover-color: #FFFFFF; /* Branco para destaque */
+
+    /* Cores de Ação */
+    --primary-color: #0d6efd;
+    --footer-bg-color: #35424a;
+    --footer-text-color: #ffffff;
+}
+
+/* --- 2. ESTILOS GLOBAIS USANDO AS VARIÁVEIS --- */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
-    color: #222;
-}
-
-header {
-    background: #0d6efd !important; /* Azul Bootstrap */
-    color: #ffffff;
-    padding: 0px 0;
-    text-align: center;
-}
-
-h1 {
-    margin: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s; /* Transição suave */
 }
 
 .container {
@@ -24,8 +35,8 @@ h1 {
 }
 
 footer {
-    background: #35424a;
-    color: #ffffff;
+    background: var(--footer-bg-color);
+    color: var(--footer-text-color);
     text-align: center;
     padding: 10px 0;
     position: relative;
@@ -33,126 +44,80 @@ footer {
     width: 100%;
 }
 
-.button {
-    display: inline-block;
-    font-size: 16px;
-    color: #ffffff;
-    background: #e8491d;
-    padding: 10px 20px;
-    text-decoration: none;
-    border-radius: 5px;
+/* --- 3. ESTILOS DA NOVA NAVBAR --- */
+.navbar-custom {
+    background-color: var(--navbar-bg-color) !important;
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem;
 }
 
-.button:hover {
-    background: #c0392b;
+.navbar-custom .navbar-brand {
+    color: var(--navbar-text-hover-color) !important;
+    font-weight: bold;
 }
 
-/* --- MODO ESCURO --- */
+.navbar-custom .nav-link {
+    color: var(--navbar-text-color) !important;
+    font-size: 1.05rem; /* Tamanho da fonte ajustado */
+    font-weight: 500;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+    transition: color 0.2s ease-in-out;
+}
+
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-link.active {
+    color: var(--navbar-text-hover-color) !important;
+}
+
+/* Ajuste para o ícone do menu 'hambúrguer' em telas pequenas */
+.navbar-dark .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+
+/* --- 4. MODO ESCURO (APENAS REDEFINE AS VARIÁVEIS) --- */
 body.dark-mode {
-    background-color: #181a1b !important;
-    color: #e0e0e0 !important;
+    --bg-color: #181a1b;
+    --text-color: #e0e0e0;
+    --card-bg-color: #23272b;
+    --card-border-color: #444;
+    
+    /* No modo escuro, a navbar pode continuar a mesma ou clarear um pouco.
+       Vamos manter a mesma cor escura que já é adequada. */
+    --navbar-bg-color: #2D2D34;
+    
+    --footer-bg-color: #23272b;
 }
 
-body.dark-mode header {
-    background: #0d6efd !important; /* Mantém azul no dark mode */
-    color: #fff !important;
+
+/* --- 5. ESTILOS DE COMPONENTES QUE SE ADAPTAM AO TEMA --- */
+/* Cards e elementos de fundo claro/branco */
+.card, .bg-light, .bg-white {
+    background-color: var(--card-bg-color) !important;
+    color: var(--text-color) !important;
+    border-color: var(--card-border-color) !important;
 }
 
-body.dark-mode footer {
-    background: #23272b !important;
-    color: #e0e0e0 !important;
+/* Formulários */
+.form-control, input, textarea, select {
+    background-color: var(--card-bg-color) !important;
+    color: var(--text-color) !important;
+    border-color: var(--card-border-color) !important;
 }
 
-body.dark-mode .container,
-body.dark-mode main,
-body.dark-mode .bg-light,
-body.dark-mode .bg-white {
-    background-color: #23272b !important;
-    color: #e0e0e0 !important;
+.form-control:focus, input:focus, textarea:focus, select:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-body.dark-mode .card {
-    background-color: #23272b !important;
-    color: #e0e0e0 !important;
-    border-color: #444 !important;
+/* Alertas */
+.alert {
+    background-color: var(--card-bg-color) !important;
+    color: var(--text-color) !important;
+    border-color: var(--card-border-color) !important;
 }
 
-body.dark-mode .navbar.bg-primary,
-.navbar.bg-primary {
-    background-color: #0d6efd !important;
-    color: #fff !important;
-    border-bottom: none !important;
-}
-
-.navbar {
-    box-shadow: none !important;
-    border: none !important;
-}
-
-body.dark-mode .navbar .container,
-.navbar .container,
-body.dark-mode .navbar .container-fluid,
-.navbar .container-fluid {
-    background: transparent !important;
-}
-
-body.dark-mode .btn,
-body.dark-mode .button {
-    background: #444 !important;
-    color: #e0e0e0 !important;
-    border-color: #888 !important;
-}
-
-body.dark-mode .btn:hover,
-body.dark-mode .button:hover {
-    background: #666 !important;
-    color: #fff !important;
-}
-
-body.dark-mode .btn-outline-light {
-    color: #fff !important;
-    border-color: #fff !important;
-}
-
-body.dark-mode .btn-outline-light:hover {
-    background: #fff !important;
-    color: #23272b !important;
-}
-
-body.dark-mode .alert {
-    background-color: #222 !important;
-    color: #e0e0e0 !important;
-    border-color: #444 !important;
-}
-
-body.dark-mode .form-control,
-body.dark-mode input,
-body.dark-mode textarea,
-body.dark-mode select {
-    background-color: #23272b !important;
-    color: #e0e0e0 !important;
-    border-color: #444 !important;
-}
-
-body.dark-mode .form-control:focus,
-body.dark-mode input:focus,
-body.dark-mode textarea:focus,
-body.dark-mode select:focus {
-    background-color: #181a1b !important;
-    color: #fff !important;
-    border-color: #888 !important;
-}
-
-body.dark-mode .file-info {
-    background-color: #222 !important;
-    color: #e0e0e0 !important;
-    border-color: #444 !important;
-}
-.icon {
-    display: inline-block;
-    width: 28px;
-    height: 28px;
-    background: url("static/img/pdf.png") no-repeat center center;
-    background-size: contain;
-    vertical-align: middle;
+.alert-info {
+    border-left: 4px solid var(--primary-color) !important;
 }
