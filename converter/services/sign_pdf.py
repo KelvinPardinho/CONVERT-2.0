@@ -1,9 +1,52 @@
+
 import os
 import uuid
 from typing import Tuple, Optional
+from datetime import datetime
+
 from pyhanko.sign import signers
 from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
-from pyhanko.pdf_utils.reader import PdfFileReader
+from pyhanko.sign.fields import SigFieldSpec
+from pyhanko.sign.signers.pdf_signer import PdfSignatureMetadata, PdfSigner
+from pyhanko.sign.general import SigningError
+
+# Pillow ainda é necessário, mas apenas para manipular a imagem de template
+from PIL import Image, ImageDraw, ImageFont
+
+from django.conf import settings # Para pegar o caminho da pasta static
+
+def create_dynamic_stamp(signer_name: str) -> bytes:
+    """
+    Carrega uma imagem de template e escreve os dados dinâmicos sobre ela.
+    """
+    try:
+        # Caminho para a imagem de template na sua pasta static
+        template_path = os.path.join(settings.STATIC_ROOT or settings.STATICFILES_DIRS[0], 'images', 'stamp_template.png')
+        stamp_img = Image.open(template_path).convert("RGBA")
+        
+        draw = ImageDraw.Draw(stamp_img)
+        
+        try:
+            # Tenta carregar uma fonte bonita, se disponível
+            font = ImageFont.truetype("arial.ttf", 14)
+            small_font = ImageFont.truetype("arialbd.ttf", 11) # Bold para o nome
+        except IOError:
+            font = ImageFont.load_default()
+            small_font = ImageFont.load_default()
+
+        # Escreve o nome do assinante e a data na imagem
+        now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        draw.text((80, 25), signer_name[:28], fill="black", font=font)
+        draw.text((80, 55), f"Data: {now_str}", fill="black", font=small_font)
+
+        # Converte a imagem final para bytes em memória
+        img_byte_arr = os.BytesIO()
+        stamp_img.save(img_byte_arr, format='PNG')
+        return img_byte_arr.getvalue()
+
+    except Exception:
+        # Se a criação da imagem falhar, retorna None para usar uma assinatura invisível
+        return None
 
 def process_sign_pdf(
     pdf_file_bytes: bytes,
@@ -11,76 +54,45 @@ def process_sign_pdf(
     password: str,
     output_dir: str,
     base_filename: str,
-    signer_email: Optional[str] = None,
-    reason: str = "Concordância com os termos.",
-    location: str = "Online",
+    page_index: int = 0,
+    x1: int = 50, y1: int = 50, x2: int = 300, y2: int = 150
 ) -> Tuple[bool, str, str, dict]:
-    """
-    Assina digitalmente um arquivo PDF com um certificado A1.
-
-    Args:
-        pdf_file_bytes (bytes): Conteúdo do PDF a ser assinado.
-        pfx_file_bytes (bytes): Conteúdo do arquivo de certificado (.pfx/.p12).
-        password (str): Senha do certificado.
-        output_dir (str): Diretório para salvar o PDF assinado.
-        base_filename (str): Nome do arquivo original.
-        signer_email (str, optional): Email do assinante.
-        reason (str, optional): Razão da assinatura.
-        location (str, optional): Local da assinatura.
-
-    Returns:
-        Tuple[bool, str, str, dict]: (sucesso, mensagem, nome_do_arquivo, dados_extras)
-    """
     try:
-        # Carrega o signer a partir do arquivo PFX (certificado A1)
-        # A senha é convertida para bytes, como a biblioteca espera
         signer = signers.SimpleSigner.load_pkcs12(
             pfx_file_bytes, passphrase=password.encode('utf-8')
         )
         
-        # Prepara o documento PDF para receber a assinatura
-        pdf_writer = IncrementalPdfFileWriter(os.BytesIO(pdf_file_bytes))
+        signature_meta = PdfSignatureMetadata(reason="Validade do Documento")
 
-        # Configura os metadados da assinatura
-        signature_meta = signers.SignatureMetadata(
-            reason=reason,
-            location=location,
-            signer=signer.subject_name,
-            contact_info=signer_email,
-        )
-
-        # Realiza a assinatura
-        # A biblioteca cuida de criar o campo de assinatura, assinar o hash do documento
-        # e embutir o certificado e a assinatura no PDF.
-        # Aqui, estamos adicionando uma assinatura visível na última página.
-        # Para posições personalizadas, a lógica seria mais complexa.
-        pdf_signer = signers.PdfSigner(
-            signature_meta,
-            signer=signer,
-            # Configuração do carimbo de tempo (opcional, mas recomendado)
-            # É preciso usar um serviço de TSA (Time Stamping Authority)
-            # timestamper=signers.requests_timestamper(tsa_url='http://timestamp.digicert.com')
-        )
+        # Extrai o nome do assinante do certificado
+        try:
+            common_name = signer.cert_registry.get_cert_by_id(signer.signing_cert.issuer_serial).subject.native['common_name']
+        except:
+            common_name = "Assinante"
+        
+        # Gera a imagem do carimbo dinamicamente
+        stamp_bytes = create_dynamic_stamp(common_name)
+        
+        pdf_signer = PdfSigner(signature_meta, signer, appearance_img_bytes=stamp_bytes)
 
         output_filename = f"{base_filename}_signed_{uuid.uuid4().hex[:6]}.pdf"
         output_path = os.path.join(output_dir, output_filename)
 
         with open(output_path, "wb") as f_out:
             pdf_signer.sign_pdf(
-                pdf_writer,
+                os.BytesIO(pdf_file_bytes),
                 output=f_out,
-                # Aparência da assinatura (opcional)
-                # appearance=...
+                appearance_field_name='Signature1',
+                box=(x1, y1, x2, y2),
+                on_page=page_index
             )
 
-        return True, "Documento assinado digitalmente com sucesso!", output_filename, None
+        return True, "Documento assinado com sucesso!", output_filename, None
 
-    except Exception as e:
-        # Erros comuns: senha incorreta, certificado inválido, etc.
+    except SigningError as e:
         error_message = str(e)
         if "MAC failure" in error_message or "bad mac" in error_message:
             error_message = "Senha do certificado incorreta."
-        elif "Could not deserialize" in error_message:
-            error_message = "Arquivo de certificado inválido ou corrompido."
-        
-        return False, f"Erro ao assinar o PDF: {error_message}", "", None
+        return False, f"Erro de assinatura: {error_message}", "", None
+    except Exception as e:
+        return False, f"Erro inesperado: {str(e)}", "", None

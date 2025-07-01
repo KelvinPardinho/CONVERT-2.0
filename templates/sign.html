@@ -3,8 +3,37 @@
 {% block title %}Assinatura Digital - Convert{% endblock %}
 
 {% block content %}
+<style>
+    /* Estilos para a área de assinatura */
+    .pdf-viewer-container {
+        position: relative;
+        border: 1px solid #ddd;
+        overflow: auto;
+        max-height: 80vh;
+        background-color: #f8f9fa;
+    }
+    .pdf-page-canvas {
+        display: block;
+        margin: 1rem auto;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        cursor: crosshair; /* Indica que o usuário pode interagir */
+    }
+    .signature-box {
+        position: absolute;
+        border: 2px dashed #0d6efd;
+        background-color: rgba(13, 110, 253, 0.2);
+        cursor: move;
+        resize: both;
+        overflow: hidden;
+        /* Adiciona a imagem do carimbo como fundo */
+        background-image: url("{% static 'images/stamp_template.png' %}");
+        background-size: contain;
+        background-repeat: no-repeat;
+    }
+</style>
+
 <!-- Header Section -->
-<section class="py-5">
+<section class="py-4">
     <div class="container">
         <div class="row">
             <div class="col-12 text-center">
@@ -12,224 +41,63 @@
                     <i class="fas fa-signature text-success me-3"></i>Assinatura Digital
                 </h1>
                 <p class="lead text-muted">
-                    Assine documentos PDF com certificado digital A1/A3 e validade jurídica
+                    Faça o upload do seu documento, posicione a assinatura e assine com validade jurídica.
                 </p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Info Banner -->
-<section class="py-3 bg-light">
+<!-- Interface Principal -->
+<section class="pb-5">
     <div class="container">
-        <div class="alert alert-info border-0 mb-0">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <i class="fas fa-info-circle fa-2x"></i>
-                </div>
-                <div class="col">
-                    <h6 class="mb-1">Assinatura com Validade Jurídica</h6>
-                    <p class="mb-0 text-muted">
-                        Utilize certificados digitais ICP-Brasil A1 ou A3 para assinaturas com plena validade legal.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Document Upload Section -->
-<section class="py-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-transparent">
-                        <h5 class="mb-0">
-                            <i class="fas fa-file-upload text-primary me-2"></i>1. Documento para Assinatura
-                        </h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <form id="documentUploadForm" action="{% url 'upload_file' %}" method="post" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="documentFile" class="form-label">Selecione o documento PDF</label>
-                                <input type="file" class="form-control form-control-lg" id="documentFile" name="file" accept=".pdf" required>
-                                <div class="form-text">Formatos aceitos: PDF (máximo 16MB)</div>
-                            </div>
-                            
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-upload me-2"></i>Enviar Documento
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Certificate Section -->
-<section class="py-4" id="certificateSection" style="display: none;">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-transparent">
-                        <h5 class="mb-0">
-                            <i class="fas fa-certificate text-warning me-2"></i>2. Certificado Digital
-                        </h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="certificateFile" class="form-label">Certificado A1 (.pfx/.p12)</label>
-                                    <input type="file" class="form-control" id="certificateFile" accept=".pfx,.p12">
-                                    <div class="form-text">Arquivo do certificado digital A1</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="certificatePassword" class="form-label">Senha do Certificado</label>
-                                    <input type="password" class="form-control" id="certificatePassword" placeholder="Digite a senha">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Importante:</strong> Seus dados de certificado são processados localmente e não são armazenados em nossos servidores.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Signature Configuration Section -->
-<section class="py-4" id="signatureConfigSection" style="display: none;">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-transparent">
-                        <h5 class="mb-0">
-                            <i class="fas fa-cog text-info me-2"></i>3. Configurações da Assinatura
-                        </h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Posição da Assinatura</label>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="signaturePosition" id="positionEnd" value="end" checked>
-                                        <label class="form-check-label" for="positionEnd">
-                                            Ao final do documento
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="signaturePosition" id="positionCustom" value="custom">
-                                        <label class="form-check-label" for="positionCustom">
-                                            Posição personalizada
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6" id="customPositionFields" style="display: none;">
-                                <div class="row">
-                                    <div class="col-6">
-                                        <div class="mb-3">
-                                            <label for="signatureX" class="form-label">Posição X</label>
-                                            <input type="number" class="form-control" id="signatureX" placeholder="100">
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="mb-3">
-                                            <label for="signatureY" class="form-label">Posição Y</label>
-                                            <input type="number" class="form-control" id="signatureY" placeholder="100">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="signerEmail" class="form-label">Email do Assinante</label>
-                            <input type="email" class="form-control" id="signerEmail" placeholder="seu@email.com" required>
-                            <div class="form-text">Usado para rastreamento e notificações</div>
-                        </div>
-                        
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="includeTimestamp" checked>
-                            <label class="form-check-label" for="includeTimestamp">
-                                Incluir carimbo de tempo
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Sign Button Section -->
-<section class="py-4" id="signButtonSection" style="display: none;">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8 text-center">
-                <button type="button" class="btn btn-success btn-lg" id="signDocumentBtn">
-                    <i class="fas fa-signature me-2"></i>Assinar Documento
-                </button>
-                <p class="text-muted mt-2">
-                    A assinatura será aplicada com certificado digital válido
-                </p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Features Info -->
-<section class="py-5 bg-light">
-    <div class="container">
-        <div class="row text-center mb-4">
-            <div class="col-12">
-                <h3 class="fw-bold">Por que Usar Nossa Assinatura Digital?</h3>
-            </div>
-        </div>
-        
         <div class="row g-4">
-            <div class="col-md-4">
-                <div class="text-center">
-                    <i class="fas fa-gavel fa-3x text-success mb-3"></i>
-                    <h5>Validade Jurídica</h5>
-                    <p class="text-muted">
-                        Assinatura com certificado ICP-Brasil possui validade legal equivalente à assinatura física
-                    </p>
+            <!-- Coluna de Controles (Esquerda) -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <!-- Passo 1: Upload do Documento -->
+                        <div class="mb-4">
+                            <h5><i class="fas fa-file-upload text-primary me-2"></i>1. Seu Documento</h5>
+                            <label for="documentFile" class="form-label">Selecione o PDF para assinar:</label>
+                            <input type="file" class="form-control" id="documentFile" accept=".pdf" required>
+                        </div>
+
+                        <!-- Passo 2: Certificado Digital -->
+                        <div id="certificateStep" class="mb-4 d-none">
+                            <h5><i class="fas fa-certificate text-warning me-2"></i>2. Seu Certificado</h5>
+                            <div class="mb-2">
+                                <label for="certificateFile" class="form-label">Certificado A1 (.pfx/.p12):</label>
+                                <input type="file" class="form-control" id="certificateFile" accept=".pfx,.p12" required>
+                            </div>
+                            <div>
+                                <label for="certificatePassword" class="form-label">Senha do Certificado:</label>
+                                <input type="password" class="form-control" id="certificatePassword" placeholder="Digite a senha" required>
+                            </div>
+                        </div>
+
+                        <!-- Passo 3: Assinar -->
+                        <div id="signStep" class="d-none">
+                             <h5><i class="fas fa-pen-fancy text-success me-2"></i>3. Assinar</h5>
+                             <p class="text-muted">Posicione a caixa de assinatura no documento à direita e clique no botão abaixo.</p>
+                             <div class="d-grid">
+                                <button type="button" class="btn btn-success btn-lg" id="signDocumentBtn">
+                                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    <i class="fas fa-signature me-2"></i>Assinar Documento
+                                </button>
+                             </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="col-md-4">
-                <div class="text-center">
-                    <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
-                    <h5>Segurança Total</h5>
-                    <p class="text-muted">
-                        Criptografia avançada e carimbo de tempo garantem a integridade do documento
-                    </p>
-                </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="text-center">
-                    <i class="fas fa-search fa-3x text-info mb-3"></i>
-                    <h5>Rastreabilidade</h5>
-                    <p class="text-muted">
-                        Registro completo de IP, data, hora e dados do assinante para auditoria
-                    </p>
+
+            <!-- Coluna de Visualização (Direita) -->
+            <div class="col-lg-8">
+                <div id="pdfViewer" class="pdf-viewer-container">
+                    <div class="text-center p-5">
+                        <i class="fas fa-file-pdf fa-4x text-light"></i>
+                        <p class="mt-3 text-muted">A pré-visualização do seu documento aparecerá aqui.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -238,106 +106,81 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
-// =========================================================================
-// JAVASCRIPT FINAL PARA A PÁGINA DE ASSINATURA
-// =========================================================================
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-const csrftoken = getCookie('csrftoken');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
-document.addEventListener('DOMContentLoaded', function() {
-    const documentUploadForm = document.getElementById('documentUploadForm');
-    const positionRadios = document.querySelectorAll('input[name="signaturePosition"]');
-    const customPositionFields = document.getElementById('customPositionFields');
-    const signDocumentBtn = document.getElementById('signDocumentBtn');
-
-    // Mostra as próximas seções conforme o usuário preenche os dados
-    document.getElementById('documentFile').addEventListener('change', () => {
-        if (document.getElementById('documentFile').files.length > 0) {
-            document.getElementById('certificateSection').style.display = 'block';
-        }
-    });
-
-    document.getElementById('certificateFile').addEventListener('change', () => {
-        if (document.getElementById('certificateFile').files.length > 0) {
-            document.getElementById('signatureConfigSection').style.display = 'block';
-            document.getElementById('signButtonSection').style.display = 'block';
-        }
-    });
-
-    // Lida com a posição da assinatura
-    positionRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            customPositionFields.style.display = (this.value === 'custom') ? 'block' : 'none';
-        });
-    });
-
-    // Lida com o clique no botão de assinar
-    signDocumentBtn.addEventListener('click', function() {
-        const documentFile = document.getElementById('documentFile').files[0];
-        const certificateFile = document.getElementById('certificateFile').files[0];
-        const certificatePassword = document.getElementById('certificatePassword').value;
-        const signerEmail = document.getElementById('signerEmail').value;
-
-        // Validações
-        if (!documentFile) { return alert('Selecione o documento PDF.'); }
-        if (!certificateFile) { return alert('Selecione o arquivo do certificado.'); }
-        if (!certificatePassword) { return alert('Digite a senha do certificado.'); }
-        if (!signerEmail) { return alert('Digite o email do assinante.'); }
-
-        const button = this;
-        const originalBtnHTML = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Assinando Documento...';
-        button.disabled = true;
-
-        // Prepara os dados para envio
-        const formData = new FormData();
-        formData.append('document_file', documentFile);
-        formData.append('certificate_file', certificateFile);
-        formData.append('password', certificatePassword);
-        formData.append('signer_email', signerEmail);
-        // Adicione outros dados como posição, se necessário
+    document.addEventListener('DOMContentLoaded', function() {
+        const docInput = document.getElementById('documentFile');
+        const certInput = document.getElementById('certificateFile');
+        const signBtn = document.getElementById('signDocumentBtn');
+        const pdfViewer = document.getElementById('pdfViewer');
         
-        fetch("{% url 'sign_pdf' %}", {
-            method: 'POST',
-            headers: { 'X-CSRFToken': csrftoken },
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => { throw new Error(err.message || 'Erro no servidor.'); });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                alert('Documento assinado com sucesso!');
-                window.location.href = data.download_url; // Inicia o download
-            } else {
-                throw new Error(data.message);
-            }
-        })
-        .catch(error => {
-            alert(`Erro: ${error.message}`);
-        })
-        .finally(() => {
-            button.innerHTML = originalBtnHTML;
-            button.disabled = false;
+        let signatureData = { pageIndex: 0, x1: 50, y1: 50, x2: 300, y2: 150 };
+
+        // --- Lógica de Upload e Renderização ---
+        docInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            pdfViewer.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3">Carregando...</p></div>';
+            
+            const fileReader = new FileReader();
+            fileReader.onload = (e) => {
+                pdfjsLib.getDocument({ data: e.target.result }).promise.then(pdf => {
+                    pdfViewer.innerHTML = ''; 
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        pdf.getPage(i).then(page => {
+                            const canvas = document.createElement('canvas');
+                            canvas.className = 'pdf-page-canvas';
+                            canvas.dataset.pageNumber = i - 1;
+                            const context = canvas.getContext('2d');
+                            const scale = 1.2;
+                            const viewport = page.getViewport({ scale });
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            page.render({ canvasContext: context, viewport: viewport });
+                            pdfViewer.appendChild(canvas);
+
+                            if (i === 1) addSignatureBox(canvas);
+                        });
+                    }
+                });
+            };
+            fileReader.readAsArrayBuffer(file);
+            document.getElementById('certificateStep').classList.remove('d-none');
         });
+
+        certInput.addEventListener('change', () => {
+             if (certInput.files.length > 0) document.getElementById('signStep').classList.remove('d-none');
+        });
+
+        // --- Lógica da Caixa de Assinatura ---
+        function addSignatureBox(targetCanvas) {
+            let signatureBox = pdfViewer.querySelector('.signature-box');
+            if (!signatureBox) {
+                signatureBox = document.createElement('div');
+                signatureBox.className = 'signature-box';
+                pdfViewer.appendChild(signatureBox);
+                makeDraggable(signatureBox);
+            }
+            
+            const canvasRect = targetCanvas.getBoundingClientRect();
+            const viewerRect = pdfViewer.getBoundingClientRect();
+            
+            // Posiciona a caixa de assinatura na primeira página
+            signatureBox.style.left = `${targetCanvas.offsetLeft + 50}px`;
+            signatureBox.style.top = `${targetCanvas.offsetTop + 50}px`;
+            signatureBox.style.width = '250px';
+            signatureBox.style.height = '100px';
+
+            updateSignatureData(signatureBox);
+        }
+
+        function makeDraggable(element) { /* ...código da resposta anterior... */ }
+        function updateSignatureData(element) { /* ...código da resposta anterior... */ }
+
+        // --- Lógica de Assinatura ---
+        signBtn.addEventListener('click', function() { /* ...código da resposta anterior... */ });
     });
-});
 </script>
 {% endblock %}

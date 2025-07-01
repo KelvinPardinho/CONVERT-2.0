@@ -49,30 +49,34 @@ def sign_pdf(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
 
-    # Coleta dos arquivos e dados do formulário
     pdf_file = request.FILES.get('document_file')
     pfx_file = request.FILES.get('certificate_file')
     password = request.POST.get('password')
-    signer_email = request.POST.get('signer_email')
 
-    # Validações
-    if not pdf_file or not pfx_file:
-        return JsonResponse({'success': False, 'message': 'Documento e certificado são obrigatórios.'}, status=400)
-    if not password:
-        return JsonResponse({'success': False, 'message': 'A senha do certificado é obrigatória.'}, status=400)
+    if not pdf_file or not pfx_file or not password:
+        return JsonResponse({'success': False, 'message': 'Documento, certificado e senha são obrigatórios.'}, status=400)
+
+    try:
+        page_index = int(request.POST.get('page_index', 0))
+        x1 = int(request.POST.get('x1', 50))
+        y1 = int(request.POST.get('y1', 50))
+        x2 = int(request.POST.get('x2', 300)) # Largura do carimbo
+        y2 = int(request.POST.get('y2', 150)) # Altura do carimbo
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'message': 'Dados de posicionamento inválidos.'}, status=400)
 
     converted_dir = os.path.join(settings.MEDIA_ROOT, 'converted')
     os.makedirs(converted_dir, exist_ok=True)
     base_filename = os.path.splitext(pdf_file.name)[0]
 
-    # Chama o serviço para realizar a assinatura
     success, message, output_filename, _ = process_sign_pdf(
         pdf_file_bytes=pdf_file.read(),
         pfx_file_bytes=pfx_file.read(),
         password=password,
         output_dir=converted_dir,
         base_filename=base_filename,
-        signer_email=signer_email
+        page_index=page_index,
+        x1=x1, y1=y1, x2=x2, y2=y2
     )
 
     if not success:
