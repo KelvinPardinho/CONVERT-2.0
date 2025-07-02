@@ -128,5 +128,5 @@ STATICFILES_DIRS = [
 # Configuração para arquivos de mídia (uploads de usuários) - para o futuro
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media') # Lembre-se, isso é para desenvolvimento local
-
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

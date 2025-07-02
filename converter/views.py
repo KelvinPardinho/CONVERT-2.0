@@ -36,6 +36,9 @@ def clean_old_converted_files():
                 except OSError:
                     pass
 
+def home(request):
+    return render(request, 'home.html')
+
 def index(request):
     return render(request, 'converter/index.html')
 

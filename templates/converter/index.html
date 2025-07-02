@@ -31,7 +31,7 @@
                             <i class="fas fa-upload text-primary me-2"></i>Fazer Upload do PDF
                         </h5>
                         
-                        <form id="uploadForm" action="{% url 'upload_file' %}" method="post" enctype="multipart/form-data">
+                        <form id="uploadForm" action="{% url 'converter:upload_file' %}" method="post" enctype="multipart/form-data">
                             {% csrf_token %}
                             <div class="mb-3">
                                 <input type="file" class="form-control form-control-lg" id="fileInput" name="file" accept=".pdf" required>

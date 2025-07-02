@@ -27,32 +27,36 @@
 
     <!-- ======================= HEADER / NAVBAR ======================= -->
     <header>
-        <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow-sm">
+       <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow-sm">
             <div class="container">
-                <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'home' %}">
-                    <img src="{% static 'img/logo.png' %}" alt="Convert Logo" width="45" height="50" class="d-inline-block align-text-top me-2">
-                    CONVERT
+                <!-- O link do Logo/Marca aponta para 'converter:home' -->
+                <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'converter:home' %}">
+                    <img src="{% static 'img/logo.png' %}" alt="Convert Logo" width="40" height="45" class="d-inline-block align-text-top me-2">
+                    <span>CONVERT</span>
                 </a>
                 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 
                 <div class="collapse navbar-collapse" id="mainNavbar">
                     <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'converter_index' %}active{% endif %}" href="{% url 'converter_index' %}">Converter PDF</a>
+                            <!-- O link "Ferramentas PDF" aponta para 'converter:converter_index' -->
+                            <a class="nav-link {% if request.resolver_match.view_name == 'converter:converter_index' %}active{% endif %}" href="{% url 'converter:converter_index' %}">
+                                <i class="fa-solid fa-screwdriver-wrench me-2"></i>Ferramentas PDF</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'sign_index' %}active{% endif %}" href="{% url 'sign_index' %}">Assinar Documento</a>
+                            <a class="nav-link {% if request.resolver_match.view_name == 'converter:sign_index' %}active{% endif %}" href="{% url 'converter:sign_index' %}">
+                                <i class="fas fa-signature me-2"></i>Assinar Documento</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'blog_index' %}active{% endif %}" href="#">Blog</a>
+                            <a class="nav-link {% if request.resolver_match.app_name == 'blog' %}active{% endif %}" href="{% url 'blog:blog_index' %}">
+                                <i class="fa-solid fa-blog me-2"></i>Blog</a>
                         </li>
                     </ul>
-
                     <div class="d-flex align-items-center">
-                         <button id="theme-toggle-btn" class="btn btn-outline-light border-0" type="button" title="Alternar tema">
+                        <button id="theme-toggle-btn" class="btn btn-outline-light border-0" type="button" title="Alternar tema">
                             <i class="fas fa-moon" id="theme-icon"></i>
                         </button>
                     </div>
