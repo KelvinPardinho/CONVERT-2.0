@@ -274,23 +274,28 @@ def merge_pdf(request):
 
 def split_pdf(request):
     clean_old_converted_files()
-    if request.method != 'POST': return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
 
     pdf_file = request.FILES.get('file')
-    if not pdf_file: return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
+    if not pdf_file:
+        return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
         
     try:
         split_mode = request.POST.get('split_mode', 'individual')
         selections = json.loads(request.POST.get('selections', '[]'))
         rotations = json.loads(request.POST.get('rotations', '[]'))
-    except json.JSONDecodeError: return JsonResponse({'success': False, 'message': 'Dados de formulário inválidos.'}, status=400)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Dados de formulário inválidos.'}, status=400)
 
     converted_dir = os.path.join(settings.MEDIA_ROOT, 'converted')
     os.makedirs(converted_dir, exist_ok=True)
     base_filename = os.path.splitext(pdf_file.name)[0]
 
-    success, message, output_filename = process_split_pdf(
-        pdf_file_bytes=pdf_file.read(),
+    # <<< A CORREÇÃO É AQUI >>>
+    # Passamos o objeto 'pdf_file' diretamente, sem .read()
+    success, message, output_filename, _ = process_split_pdf(
+        pdf_file=pdf_file,
         split_mode=split_mode,
         selections=selections,
         rotations=rotations,
@@ -298,14 +303,15 @@ def split_pdf(request):
         base_filename=base_filename
     )
 
-    if not success: return JsonResponse({'success': False, 'message': message}, status=500)
+    if not success:
+        return JsonResponse({'success': False, 'message': message}, status=500)
 
     response_data = {'success': True, 'message': message}
-    download_path = f'/tools/download/converted/{output_filename}/'
-    if split_mode == 'merge':
-        response_data['download_url'] = download_path
-    else:
+    download_path = f'/download/converted/{output_filename}/' # Ajustado para o URL correto
+    if '.zip' in output_filename:
         response_data['download_zip'] = download_path
+    else:
+        response_data['download_url'] = download_path
         
     return JsonResponse(response_data)
 
