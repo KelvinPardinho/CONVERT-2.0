@@ -72,7 +72,7 @@ def sign_pdf(request):
     os.makedirs(converted_dir, exist_ok=True)
     base_filename = os.path.splitext(pdf_file.name)[0]
 
-    success, message, output_filename, _ = process_sign_pdf(
+    success, message, output_filename, _ = process_split_pdf(
         pdf_file_bytes=pdf_file.read(),
         pfx_file_bytes=pfx_file.read(),
         password=password,
