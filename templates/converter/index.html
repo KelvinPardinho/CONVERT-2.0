@@ -301,17 +301,15 @@
 // JAVASCRIPT FINAL E CORRIGIDO
 // =========================================================================
 
-// --- 1. VARIÁVEIS GLOBAIS E ESTADO ---
+// --- 1. ESTADO E VARIÁVEIS GLOBAIS ---
 let selectedTool = null;
 let uploadedFile = null;
-
 let toolState = {
     merge: { files: [], rotations: {} },
     split: { selections: [], rotations: [] },
     image: { rotations: [] },
-    convertImage: { rotation: []}
+    convertImage: { rotation: 0 }
 };
-
 
 // --- 2. FUNÇÕES DE APOIO E LÓGICA DE UPLOAD ---
 function getCookie(name) {
@@ -341,10 +339,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(this);
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalBtnHTML = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validando...';
         submitBtn.disabled = true;
         
-        fetch('/tools/upload/', {
+        fetch('/api/upload/', {
             method: 'POST', body: formData, headers: { 'X-CSRFToken': csrftoken }
         })
         .then(response => {
@@ -354,13 +352,16 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 uploadedFile = { name: data.filename, numPages: data.num_pages };
-                submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Arquivo Enviado!';
+                submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Arquivo Carregado!';
                 submitBtn.classList.replace('btn-primary', 'btn-success');
-                document.querySelectorAll('.tool-card button').forEach(btn => btn.disabled = false);
+                document.querySelectorAll('.tool-card button').forEach(btn => {
+                    if (btn.closest('.tool-card').dataset.requiresUpload === "true") {
+                        btn.disabled = false;
+                    }
+                });
                 const alertEl = document.createElement('div');
                 alertEl.className = 'alert alert-success mt-3';
-                alertEl.innerHTML = `<i class="fas fa-check-circle me-2"></i>Arquivo <strong>${data.filename}</strong> (${data.numPages} páginas) pronto!`;
-                
+                alertEl.innerHTML = `<i class="fas fa-check-circle me-2"></i>Arquivo <strong>${data.filename}</strong> (${data.numPages} páginas) pronto! Escolha uma ferramenta.`;
                 const existingAlert = uploadForm.querySelector('.alert');
                 if (existingAlert) existingAlert.remove();
                 uploadForm.appendChild(alertEl);
@@ -379,12 +380,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // --- 3. CONTROLE PRINCIPAL E MODAIS ---
 function selectTool(tool) {
-    // Lista de ferramentas que NÃO precisam de um PDF pré-carregado.
     const standaloneTools = ['merge', 'image-to-pdf', 'convert-image'];
     if (!standaloneTools.includes(tool) && !uploadedFile) {
         return alert('Para usar esta ferramenta, por favor, carregue um arquivo PDF na seção "Fazer Upload do PDF" primeiro.');
     }
-
     selectedTool = tool;
 
     // Definições completas dos modais
@@ -405,39 +404,10 @@ function selectTool(tool) {
             title: 'Dividir PDF',
             body: `
                 <div class="row border-bottom pb-3 mb-3">
-                    <!-- Coluna da Esquerda: Modos de Divisão -->
-                    <div class="col-md-7">
-                        <h6>Modo de Divisão</h6>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="splitMode" id="splitIndividual" value="individual" checked>
-                            <label class="form-check-label" for="splitIndividual">Extrair páginas selecionadas (.zip)</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="splitMode" id="splitMerge" value="merge">
-                            <label class="form-check-label" for="splitMerge">Unir páginas selecionadas em um PDF</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="splitMode" id="splitPairs" value="pairs">
-                            <label class="form-check-label" for="splitPairs">Dividir todo o documento em pares (1-2, 3-4, ...)</label>
-                        </div>
-                    </div>
-
-                    <!-- Coluna da Direita: Ações Globais (Restaurada) -->
-                    <div class="col-md-5 d-flex align-items-center justify-content-end">
-                        <div id="split-selection-controls" class="form-check me-3">
-                            <input class="form-check-input" type="checkbox" id="selectAllPages" onchange="window.App.toggleAllSelections(this.checked)">
-                            <label class="form-check-label" for="selectAllPages">
-                                Selecionar Todas
-                            </label>
-                        </div>
-                        <button class="btn btn-secondary" onclick="window.App.rotateAllPreviews()">
-                            <i class="fas fa-sync-alt me-2"></i>Girar Todas
-                        </button>
-                    </div>
+                    <div class="col-md-7"><h6>Modo de Divisão</h6><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitIndividual" value="individual" checked><label class="form-check-label" for="splitIndividual">Extrair páginas selecionadas (.zip)</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitMerge" value="merge"><label class="form-check-label" for="splitMerge">Unir páginas selecionadas em um PDF</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitPairs" value="pairs"><label class="form-check-label" for="splitPairs">Dividir todo o documento em pares (1-2, 3-4, ...)</label></div></div>
+                    <div class="col-md-5 d-flex align-items-center justify-content-end"><div id="split-selection-controls" class="form-check me-3"><input class="form-check-input" type="checkbox" id="selectAllPages" onchange="window.App.toggleAllSelections(this.checked)"><label class="form-check-label" for="selectAllPages">Selecionar Todas</label></div><button class="btn btn-secondary" onclick="window.App.rotateAllPreviews()"><i class="fas fa-sync-alt me-2"></i>Girar Todas</button></div>
                 </div>
-                <div id="previewContainer" class="row g-3 text-center">
-                    <div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div>
-                </div>`
+                <div id="previewContainer" class="row g-3 text-center"><div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div></div>`
         },
         'compress': {
             title: 'Comprimir PDF',
@@ -492,7 +462,6 @@ function selectTool(tool) {
         'pdf-to-excel': { title: 'PDF para Excel', body: `<p>O arquivo carregado (${uploadedFile?.name || 'PDF'}) será convertido. Clique em processar.</p>` },
         'pdf-to-image': {
             title: 'Converter PDF para Imagens',
-             // CORREÇÃO: As chamadas onclick agora usam o namespace window.App
             body: `
                 <div class="d-flex justify-content-between align-items-center mb-3"><div><label class="form-label mb-0 me-2">Formato:</label><select class="form-select-sm" id="imageFormat"><option value="jpg">JPG</option><option value="png" selected>PNG</option></select></div><div><button class="btn btn-secondary" onclick="window.App.rotateAllPreviews()"><i class="fas fa-sync-alt me-2"></i>Girar Todas</button></div></div>
                 <div id="previewContainer" class="row g-3 text-center"><div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div></div>`
@@ -515,23 +484,37 @@ function selectTool(tool) {
         document.getElementById('mergeFilesInput').addEventListener('change', renderMergePreview);
         
     } else if (tool === 'split') {
+        // 1. Reseta o estado da ferramenta para evitar dados de usos anteriores.
         toolState.split = { selections: [], rotations: [] };
-
-        document.querySelectorAll('input[name="splitMode"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const previewContainer = document.getElementById('previewContainer');
-            const selectionControls = document.getElementById('split-selection-controls');
-            
-            // Mostra ou esconde os checkboxes de seleção de página
-            if (this.value === 'pairs') {
-                previewContainer.querySelectorAll('.form-check').forEach(el => el.style.display = 'none');
-                selectionControls.style.display = 'none';
-            } else {
-                previewContainer.querySelectorAll('.form-check').forEach(el => el.style.display = 'flex');
-                selectionControls.style.display = 'block';
-            }
-        });
-    });
+        
+        // 2. Chama a função para renderizar as miniaturas das páginas.
+        //    Passa o arquivo, o modo 'split' e o objeto uploadedFile que contém o número de páginas.
+        renderPagePreview(document.getElementById('fileInput').files[0], 'split', uploadedFile);
+        
+        // 3. Adiciona os listeners para os botões de rádio do "Modo de Divisão".
+        //    Isso precisa ser feito DEPOIS que o modal foi preenchido com o HTML.
+        //    Usamos um pequeno timeout para garantir que os elementos já existem no DOM.
+        setTimeout(() => {
+            document.querySelectorAll('input[name="splitMode"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const previewContainer = document.getElementById('previewContainer');
+                    const selectionControls = document.getElementById('split-selection-controls');
+                    
+                    // Se o modo for "Dividir em pares", esconde os controles de seleção.
+                    if (this.value === 'pairs') {
+                        // Esconde o "Selecionar Todas"
+                        if(selectionControls) selectionControls.style.display = 'none';
+                        // Esconde os checkboxes individuais de cada página
+                        previewContainer.querySelectorAll('.form-check').forEach(el => el.style.display = 'none');
+                    } else {
+                        // Se for outro modo, mostra os controles de seleção.
+                        if(selectionControls) selectionControls.style.display = 'block';
+                        previewContainer.querySelectorAll('.form-check').forEach(el => el.style.display = 'flex');
+                    }
+                });
+            });
+        }, 100); // 100ms é geralmente suficiente para o DOM ser atualizado.
+    
     } else if (tool === 'pdf-to-image') {
         toolState.image = { rotations: [] };
         renderPagePreview(document.getElementById('fileInput').files[0], 'image', uploadedFile);
@@ -582,13 +565,14 @@ function renderMergePreview(event) {
                     canvas.width = viewport.width;
                     page.render({ canvasContext: context, viewport: viewport });
 
+                    // CORREÇÃO: onclick agora aponta para window.App
                     const cardHTML = `
                         <div class="col-md-4 col-sm-6">
                             <div class="card h-100">
                                 <div class="card-body p-2 d-flex flex-column align-items-center">
                                     <p class="mb-1 mt-2 small text-truncate w-100 px-2" title="${file.name}">${file.name}</p>
                                     <div id="merge-canvas-wrapper-${index}" class="my-2" style="transition: transform 0.3s ease;"></div>
-                                    <button class="btn btn-outline-secondary btn-sm" onclick="rotateMergeFile(${index})">
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="window.App.rotateMergeFile(${index})">
                                         <i class="fas fa-sync-alt"></i> Girar Arquivo
                                     </button>
                                 </div>
@@ -603,9 +587,13 @@ function renderMergePreview(event) {
     });
 }
 
-function renderPagePreview(file, mode, numPages) {
+function renderPagePreview(file, mode, uploadedFileInfo) {
     const previewContainer = document.getElementById('previewContainer');
-    if (!file) { return previewContainer.innerHTML = '<div class="alert alert-danger">Arquivo PDF não encontrado.</div>'; }
+    if (!file || !uploadedFileInfo || !uploadedFileInfo.numPages) { 
+        previewContainer.innerHTML = `<div class="alert alert-danger">Não foi possível carregar a pré-visualização. Por favor, recarregue a página e o arquivo.</div>`;
+        return;
+    }
+    const numPages = uploadedFileInfo.numPages;
     previewContainer.innerHTML = `<div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Renderizando ${numPages} páginas...</div>`;
 
     const fileReader = new FileReader();
@@ -616,62 +604,66 @@ function renderPagePreview(file, mode, numPages) {
             if (mode === 'image') toolState.image = { rotations: Array(numPages).fill(0) };
             
             for (let i = 1; i <= numPages; i++) {
-                pdf.getPage(i).then(page => {
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    const scale = 0.3;
-                    const viewport = page.getViewport({ scale });
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    page.render({ canvasContext: context, viewport: viewport });
+                (function(pageNum) {
+                    pdf.getPage(pageNum).then(page => {
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        const scale = 0.3;
+                        const viewport = page.getViewport({ scale });
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        page.render({ canvasContext: context, viewport: viewport });
 
-                    let optionsHTML = '';
-                    if (mode === 'split') {
-                        optionsHTML = `<div class="form-check d-flex align-items-center justify-content-center mb-2">
-                            <input class="form-check-input mt-0" type="checkbox" id="page-checkbox-${i-1}" onchange="togglePageSelection(${i-1})">
-                            <label class="form-check-label ms-2 small" for="page-checkbox-${i-1}">Página ${i}</label>
-                        </div>`;
-                    } else {
-                        optionsHTML = `<p class="mb-1 mt-2 small">Página ${i}</p>`;
-                    }
+                        let optionsHTML = '';
+                        if (mode === 'split') {
+                            // CORREÇÃO: onchange agora aponta para window.App
+                            optionsHTML = `<div class="form-check d-flex align-items-center justify-content-center mb-2">
+                                <input class="form-check-input mt-0" type="checkbox" id="page-checkbox-${pageNum-1}" onchange="window.App.togglePageSelection(${pageNum-1})">
+                                <label class="form-check-label ms-2 small" for="page-checkbox-${pageNum-1}">Página ${pageNum}</label>
+                            </div>`;
+                        } else {
+                            optionsHTML = `<p class="mb-1 mt-2 small">Página ${pageNum}</p>`;
+                        }
 
-                    const cardHTML = `
-                        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                            <div class="card h-100">
-                                <div class="card-body p-2 d-flex flex-column align-items-center">
-                                    ${optionsHTML}
-                                    <div id="page-canvas-wrapper-${i-1}" class="my-1" style="transition: transform 0.3s ease;"></div>
-                                    <button class="btn btn-outline-secondary btn-sm" onclick="rotatePagePreview(${i-1})">
-                                        <i class="fas fa-sync-alt"></i> Girar
-                                    </button>
+                        // CORREÇÃO: onclick agora aponta para window.App
+                        const cardHTML = `
+                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
+                                <div class="card h-100">
+                                    <div class="card-body p-2 d-flex flex-column align-items-center">
+                                        ${optionsHTML}
+                                        <div id="page-canvas-wrapper-${pageNum-1}" class="my-1" style="transition: transform 0.3s ease;"></div>
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="window.App.rotatePagePreview(${pageNum-1})">
+                                            <i class="fas fa-sync-alt"></i> Girar
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>`;
-                    previewContainer.insertAdjacentHTML('beforeend', cardHTML);
-                    document.getElementById(`page-canvas-wrapper-${i-1}`).appendChild(canvas);
-                });
+                            </div>`;
+                        previewContainer.insertAdjacentHTML('beforeend', cardHTML);
+                        document.getElementById(`page-canvas-wrapper-${pageNum-1}`).appendChild(canvas);
+                    });
+                })(i);
             }
         });
     };
     fileReader.readAsArrayBuffer(file);
 }
 
-
 function renderImageConverterPreview(event) {
+    // ... (esta função já está correta, mas a chamada onclick no HTML precisa ser ajustada)
+    // A chamada onclick="rotateConvertImage()" deve ser onclick="window.App.rotateConvertImage()"
+    // Isso é feito na função `selectTool`
     const file = event.target.files[0];
     if (!file) return;
 
     const previewContainer = document.getElementById('imagePreviewContainer');
     const optionsContainer = document.getElementById('convertImageOptions');
     
-    // Mostra a pré-visualização da imagem
     const reader = new FileReader();
     reader.onload = (e) => {
         previewContainer.innerHTML = `<img id="imagePreview" src="${e.target.result}" class="img-fluid" style="max-height: 250px; transition: transform 0.3s ease;">`;
     };
     reader.readAsDataURL(file);
 
-    // Detecta o tipo e preenche as opções de conversão
     const originalFormat = file.type.split('/')[1].toUpperCase().replace('JPEG', 'JPG');
     document.getElementById('originalFormat').textContent = originalFormat;
 
@@ -691,52 +683,56 @@ function renderImageConverterPreview(event) {
     optionsContainer.classList.remove('d-none');
 }
 
-function rotateConvertImage() {
-    const img = document.getElementById('imagePreview');
-    if (!img) return;
-    toolState.convertImage.rotation = (toolState.convertImage.rotation + 90) % 360;
-    img.style.transform = `rotate(${toolState.convertImage.rotation}deg)`;
-}
 
+// <<< CORREÇÃO: MOVENDO TODAS AS FUNÇÕES DE CONTROLE PARA DENTRO DE UM NAMESPACE >>>
+window.App = {
+    rotateConvertImage: function() {
+        const img = document.getElementById('imagePreview');
+        if (!img) return;
+        toolState.convertImage.rotation = (toolState.convertImage.rotation + 90) % 360;
+        img.style.transform = `rotate(${toolState.convertImage.rotation}deg)`;
+    },
 
-function rotateMergeFile(fileIndex) {
-    toolState.merge.rotations[fileIndex] = (toolState.merge.rotations[fileIndex] + 90) % 360;
-    const wrapper = document.getElementById(`merge-canvas-wrapper-${fileIndex}`);
-    if (wrapper) wrapper.style.transform = `rotate(${toolState.merge.rotations[fileIndex]}deg)`;
-}
+    rotateMergeFile: function(fileIndex) {
+        toolState.merge.rotations[fileIndex] = (toolState.merge.rotations[fileIndex] + 90) % 360;
+        const wrapper = document.getElementById(`merge-canvas-wrapper-${fileIndex}`);
+        if (wrapper) wrapper.style.transform = `rotate(${toolState.merge.rotations[fileIndex]}deg)`;
+    },
 
-function rotatePagePreview(pageIndex) {
-    const state = (selectedTool === 'split') ? toolState.split : toolState.image;
-    state.rotations[pageIndex] = (state.rotations[pageIndex] + 90) % 360;
-    const wrapper = document.getElementById(`page-canvas-wrapper-${pageIndex}`);
-    if (wrapper) wrapper.style.transform = `rotate(${state.rotations[pageIndex]}deg)`;
-}
+    rotatePagePreview: function(pageIndex) {
+        const state = (selectedTool === 'split') ? toolState.split : toolState.image;
+        state.rotations[pageIndex] = (state.rotations[pageIndex] + 90) % 360;
+        const wrapper = document.getElementById(`page-canvas-wrapper-${pageIndex}`);
+        if (wrapper) wrapper.style.transform = `rotate(${state.rotations[pageIndex]}deg)`;
+    },
 
-function togglePageSelection(pageIndex) {
-    toolState.split.selections[pageIndex] = !toolState.split.selections[pageIndex];
-    const selectAllCheckbox = document.getElementById('selectAllPages');
-    if (!toolState.split.selections[pageIndex]) {
-        selectAllCheckbox.checked = false;
-    } else if (toolState.split.selections.every(s => s)) {
-        selectAllCheckbox.checked = true;
+    togglePageSelection: function(pageIndex) {
+        toolState.split.selections[pageIndex] = !toolState.split.selections[pageIndex];
+        const selectAllCheckbox = document.getElementById('selectAllPages');
+        if (!selectAllCheckbox) return;
+        if (!toolState.split.selections[pageIndex]) {
+            selectAllCheckbox.checked = false;
+        } else if (toolState.split.selections.every(s => s)) {
+            selectAllCheckbox.checked = true;
+        }
+    },
+
+    toggleAllSelections: function(isChecked) {
+        toolState.split.selections.fill(isChecked);
+        for (let i = 0; i < toolState.split.selections.length; i++) {
+            const checkbox = document.getElementById(`page-checkbox-${i}`);
+            if (checkbox) checkbox.checked = isChecked;
+        }
+    },
+
+    rotateAllPreviews: function() {
+        const state = (selectedTool === 'split') ? toolState.split : toolState.image;
+        if (!state.rotations || state.rotations.length === 0) return;
+        for (let i = 0; i < state.rotations.length; i++) {
+            this.rotatePagePreview(i);
+        }
     }
-}
-
-function toggleAllSelections(isChecked) {
-    toolState.split.selections.fill(isChecked);
-    for (let i = 0; i < toolState.split.selections.length; i++) {
-        const checkbox = document.getElementById(`page-checkbox-${i}`);
-        if (checkbox) checkbox.checked = isChecked;
-    }
-}
-
-function rotateAllPreviews() {
-    const state = (selectedTool === 'split') ? toolState.split : toolState.image;
-    if (!state.rotations || state.rotations.length === 0) return;
-    for (let i = 0; i < state.rotations.length; i++) {
-        rotatePagePreview(i);
-    }
-}
+};
 
 
 // --- 5. LÓGICA DE PROCESSAMENTO ---
