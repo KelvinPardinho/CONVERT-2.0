@@ -354,14 +354,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 uploadedFile = { name: data.filename, numPages: data.num_pages };
                 submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Arquivo Carregado!';
                 submitBtn.classList.replace('btn-primary', 'btn-success');
-                document.querySelectorAll('.tool-card button').forEach(btn => {
-                    if (btn.closest('.tool-card').dataset.requiresUpload === "true") {
-                        btn.disabled = false;
-                    }
+                document.querySelectorAll('.tool-card button[data-requires-upload="true"]').forEach(btn => {
+                    btn.disabled = false;
                 });
                 const alertEl = document.createElement('div');
                 alertEl.className = 'alert alert-success mt-3';
                 alertEl.innerHTML = `<i class="fas fa-check-circle me-2"></i>Arquivo <strong>${data.filename}</strong> (${data.numPages} páginas) pronto! Escolha uma ferramenta.`;
+                
                 const existingAlert = uploadForm.querySelector('.alert');
                 if (existingAlert) existingAlert.remove();
                 uploadForm.appendChild(alertEl);
@@ -380,34 +379,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // --- 3. CONTROLE PRINCIPAL E MODAIS ---
 function selectTool(tool) {
-    const standaloneTools = ['merge', 'image-to-pdf', 'convert-image'];
-    if (!standaloneTools.includes(tool) && !uploadedFile) {
+    if (document.querySelector(`.tool-card[data-tool-id="${tool}"] button`).disabled) {
         return alert('Para usar esta ferramenta, por favor, carregue um arquivo PDF na seção "Fazer Upload do PDF" primeiro.');
     }
     selectedTool = tool;
 
-    // Definições completas dos modais
     const toolConfigs = {
         'merge': {
             title: 'Unir PDFs',
-            body: `
-                <div class="mb-3">
-                    <label for="mergeFilesInput" class="form-label">Selecione dois ou mais arquivos PDF:</label>
-                    <input type="file" id="mergeFilesInput" class="form-control" multiple accept=".pdf">
-                    <div class="form-text">Você pode girar cada arquivo antes de unir.</div>
-                </div>
-                <div id="previewContainer" class="row g-3">
-                    <p class="text-muted text-center">Nenhum arquivo selecionado.</p>
-                </div>`
+            body: `<div class="mb-3"><label for="tool-input" class="form-label">Selecione dois ou mais arquivos PDF:</label><input type="file" id="tool-input" class="form-control" multiple accept=".pdf"></div><div id="previewContainer" class="row g-3"><p class="text-muted text-center">Nenhum arquivo selecionado.</p></div>`
         },
         'split': {
             title: 'Dividir PDF',
-            body: `
-                <div class="row border-bottom pb-3 mb-3">
-                    <div class="col-md-7"><h6>Modo de Divisão</h6><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitIndividual" value="individual" checked><label class="form-check-label" for="splitIndividual">Extrair páginas selecionadas (.zip)</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitMerge" value="merge"><label class="form-check-label" for="splitMerge">Unir páginas selecionadas em um PDF</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitPairs" value="pairs"><label class="form-check-label" for="splitPairs">Dividir todo o documento em pares (1-2, 3-4, ...)</label></div></div>
-                    <div class="col-md-5 d-flex align-items-center justify-content-end"><div id="split-selection-controls" class="form-check me-3"><input class="form-check-input" type="checkbox" id="selectAllPages" onchange="window.App.toggleAllSelections(this.checked)"><label class="form-check-label" for="selectAllPages">Selecionar Todas</label></div><button class="btn btn-secondary" onclick="window.App.rotateAllPreviews()"><i class="fas fa-sync-alt me-2"></i>Girar Todas</button></div>
-                </div>
-                <div id="previewContainer" class="row g-3 text-center"><div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div></div>`
+            body: `<div class="row border-bottom pb-3 mb-3"><div class="col-md-7"><h6>Modo de Divisão</h6><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitIndividual" value="individual" checked><label class="form-check-label" for="splitIndividual">Extrair páginas selecionadas (.zip)</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitMerge" value="merge"><label class="form-check-label" for="splitMerge">Unir páginas selecionadas</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitPairs" value="pairs"><label class="form-check-label" for="splitPairs">Dividir em pares</label></div></div><div class="col-md-5 d-flex align-items-center justify-content-end"><div id="split-selection-controls" class="form-check me-3"><input class="form-check-input" type="checkbox" id="selectAllPages" onchange="window.App.toggleAllSelections(this.checked)"><label class="form-check-label" for="selectAllPages">Selecionar Todas</label></div><button class="btn btn-secondary" onclick="window.App.rotateAllPreviews()"><i class="fas fa-sync-alt me-2"></i>Girar Todas</button></div></div><div id="previewContainer" class="row g-3 text-center"><div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div></div>`
         },
         'compress': {
             title: 'Comprimir PDF',
@@ -472,48 +456,25 @@ function selectTool(tool) {
     const modalEl = document.getElementById('toolModal');
     const modalTitle = document.getElementById('toolModalTitle');
     const modalBody = document.getElementById('toolModalBody');
-    const config = toolConfigs[tool] || { title: `Ferramenta: ${tool.replace(/-/g, ' ')}`, body: `<p>Opções não configuradas.</p>` };
+    const config = toolConfigs[tool] || { title: `Ferramenta: ${tool.replace(/-/g, ' ')}`, body: `<p>Clique em processar para continuar.</p>` };
     modalTitle.textContent = config.title;
     modalBody.innerHTML = config.body;
     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     modal.show();
 
-    // Inicializa o estado e os listeners da ferramenta
+    // Inicializa o estado e os listeners
     if (tool === 'merge') {
         toolState.merge = { files: [], rotations: {} };
-        document.getElementById('mergeFilesInput').addEventListener('change', renderMergePreview);
-        
+        document.getElementById('tool-input').addEventListener('change', renderMergePreview);
     } else if (tool === 'split') {
-        // 1. Reseta o estado da ferramenta para evitar dados de usos anteriores.
         toolState.split = { selections: [], rotations: [] };
-        
-        // 2. Chama a função para renderizar as miniaturas das páginas.
-        //    Passa o arquivo, o modo 'split' e o objeto uploadedFile que contém o número de páginas.
         renderPagePreview(document.getElementById('fileInput').files[0], 'split', uploadedFile);
         
-        // 3. Adiciona os listeners para os botões de rádio do "Modo de Divisão".
-        //    Isso precisa ser feito DEPOIS que o modal foi preenchido com o HTML.
-        //    Usamos um pequeno timeout para garantir que os elementos já existem no DOM.
         setTimeout(() => {
             document.querySelectorAll('input[name="splitMode"]').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    const previewContainer = document.getElementById('previewContainer');
-                    const selectionControls = document.getElementById('split-selection-controls');
-                    
-                    // Se o modo for "Dividir em pares", esconde os controles de seleção.
-                    if (this.value === 'pairs') {
-                        // Esconde o "Selecionar Todas"
-                        if(selectionControls) selectionControls.style.display = 'none';
-                        // Esconde os checkboxes individuais de cada página
-                        previewContainer.querySelectorAll('.form-check').forEach(el => el.style.display = 'none');
-                    } else {
-                        // Se for outro modo, mostra os controles de seleção.
-                        if(selectionControls) selectionControls.style.display = 'block';
-                        previewContainer.querySelectorAll('.form-check').forEach(el => el.style.display = 'flex');
-                    }
-                });
+                radio.addEventListener('change', window.App.handleSplitModeChange);
             });
-        }, 100); // 100ms é geralmente suficiente para o DOM ser atualizado.
+        }, 100); 
     
     } else if (tool === 'pdf-to-image') {
         toolState.image = { rotations: [] };
@@ -874,5 +835,75 @@ function showResults(result) {
     modalBody.innerHTML = content;
     modal.show();
 }
+
+
+// =========================================================================
+// --- 7. NAMESPACE GLOBAL PARA FUNÇÕES DE CONTROLE DE UI ---
+// =========================================================================
+// Colocar as funções aqui garante que elas sejam acessíveis pelos 'onclick' no HTML
+window.App = {
+    rotateConvertImage: function() {
+        const img = document.getElementById('imagePreview');
+        if (!img) return;
+        toolState.convertImage.rotation = (toolState.convertImage.rotation + 90) % 360;
+        img.style.transform = `rotate(${toolState.convertImage.rotation}deg)`;
+    },
+
+    rotateMergeFile: function(fileIndex) {
+        toolState.merge.rotations[fileIndex] = (toolState.merge.rotations[fileIndex] + 90) % 360;
+        const wrapper = document.getElementById(`merge-canvas-wrapper-${fileIndex}`);
+        if (wrapper) wrapper.style.transform = `rotate(${toolState.merge.rotations[fileIndex]}deg)`;
+    },
+
+    rotatePagePreview: function(pageIndex) {
+        const state = (selectedTool === 'split') ? toolState.split : toolState.image;
+        if (!state || !state.rotations) return;
+        state.rotations[pageIndex] = (state.rotations[pageIndex] + 90) % 360;
+        const wrapper = document.getElementById(`page-canvas-wrapper-${pageIndex}`);
+        if (wrapper) wrapper.style.transform = `rotate(${state.rotations[pageIndex]}deg)`;
+    },
+
+    togglePageSelection: function(pageIndex) {
+        toolState.split.selections[pageIndex] = !toolState.split.selections[pageIndex];
+        const selectAllCheckbox = document.getElementById('selectAllPages');
+        if (!selectAllCheckbox) return;
+        if (!toolState.split.selections[pageIndex]) {
+            selectAllCheckbox.checked = false;
+        } else if (toolState.split.selections.every(s => s)) {
+            selectAllCheckbox.checked = true;
+        }
+    },
+
+    toggleAllSelections: function(isChecked) {
+        if (!toolState.split.selections) return;
+        toolState.split.selections.fill(isChecked);
+        for (let i = 0; i < toolState.split.selections.length; i++) {
+            const checkbox = document.getElementById(`page-checkbox-${i}`);
+            if (checkbox) checkbox.checked = isChecked;
+        }
+    },
+
+    rotateAllPreviews: function() {
+        const state = (selectedTool === 'split') ? toolState.split : toolState.image;
+        if (!state || !state.rotations || state.rotations.length === 0) return;
+        for (let i = 0; i < state.rotations.length; i++) {
+            this.rotatePagePreview(i);
+        }
+    },
+
+    handleSplitModeChange: function(radioElement) {
+        const mode = radioElement.value;
+        const previewContainer = document.getElementById('previewContainer');
+        const selectionControls = document.getElementById('split-selection-controls');
+        
+        if (mode === 'pairs') {
+            if(selectionControls) selectionControls.style.display = 'none';
+            if(previewContainer) previewContainer.querySelectorAll('.form-check').forEach(el => el.style.display = 'none');
+        } else {
+            if(selectionControls) selectionControls.style.display = 'block';
+            if(previewContainer) previewContainer.querySelectorAll('.form-check').forEach(el => el.style.display = 'flex');
+        }
+    }
+};
 </script>
 {% endblock %}
