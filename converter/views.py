@@ -17,7 +17,7 @@ from .services.protect_pdf import process_protect_pdf
 from .services.unlock_pdf import process_unlock_pdf
 from .services.image_to_pdf import process_image_to_pdf
 from .services.convert_image import process_convert_image
-from .services.sign_pdf import process_sign_pdf
+from .services.sign_pdf import process_split_pdf
 
 def clean_old_converted_files():
     """
