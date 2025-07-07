@@ -30,14 +30,12 @@
                         <h5 class="card-title mb-3">
                             <i class="fas fa-upload text-primary me-2"></i>Fazer Upload do PDF
                         </h5>
-                        
                         <form id="uploadForm" method="post" enctype="multipart/form-data">
                             {% csrf_token %}
                             <div class="mb-3">
                                 <input type="file" class="form-control form-control-lg" id="fileInput" name="file" accept=".pdf" required>
                                 <div class="form-text">Formatos aceitos: PDF (máximo 16MB)</div>
                             </div>
-                            
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="fas fa-upload me-2"></i>Enviar Arquivo
@@ -65,116 +63,74 @@
             <!-- Merge PDFs -->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-object-group fa-3x text-primary"></i></div>
-                        <h5 class="card-title">Unir PDFs</h5>
-                        <p class="card-text text-muted flex-grow-1">Combine múltiplos arquivos PDF em um único documento.</p>
-                        <button class="btn btn-outline-primary tool-select-btn" data-tool="merge"><i class="fas fa-play me-2"></i>Usar Ferramenta</button>
-                    </div>
+                    <div class="card-body text-center p-4 d-flex flex-column"><div class="tool-icon mb-3"><i class="fas fa-object-group fa-3x text-primary"></i></div><h5 class="card-title">Unir PDFs</h5><p class="card-text text-muted flex-grow-1">Combine múltiplos arquivos PDF em um único documento.</p><button class="btn btn-outline-primary tool-select-btn" data-tool="merge"><i class="fas fa-play me-2"></i>Usar Ferramenta</button></div>
                 </div>
             </div>
-            
             <!-- Split PDF -->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-cut fa-3x text-success"></i></div>
-                        <h5 class="card-title">Dividir PDF</h5>
-                        <p class="card-text text-muted flex-grow-1">Separe páginas específicas ou divida por intervalos.</p>
-                        <button class="btn btn-outline-success tool-select-btn" data-tool="split"><i class="fas fa-play me-2"></i>Usar Ferramenta</button>
-                    </div>
+                    <div class="card-body text-center p-4 d-flex flex-column"><div class="tool-icon mb-3"><i class="fas fa-cut fa-3x text-success"></i></div><h5 class="card-title">Dividir PDF</h5><p class="card-text text-muted flex-grow-1">Separe páginas específicas ou divida por intervalos.</p><button class="btn btn-outline-success tool-select-btn" data-tool="split"><i class="fas fa-play me-2"></i>Usar Ferramenta</button></div>
                 </div>
             </div>
-            
             <!-- Compress PDF -->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-compress-alt fa-3x text-warning"></i></div>
-                        <h5 class="card-title">Comprimir PDF</h5>
-                        <p class="card-text text-muted flex-grow-1">Reduza o tamanho do arquivo mantendo a qualidade.</p>
-                        <button class="btn btn-outline-warning tool-select-btn" data-tool="compress"><i class="fas fa-play me-2"></i>Usar Ferramenta</button>
-                    </div>
+                    <div class="card-body text-center p-4 d-flex flex-column"><div class="tool-icon mb-3"><i class="fas fa-compress-alt fa-3x text-warning"></i></div><h5 class="card-title">Comprimir PDF</h5><p class="card-text text-muted flex-grow-1">Reduza o tamanho do arquivo mantendo a qualidade.</p><button class="btn btn-outline-warning tool-select-btn" data-tool="compress"><i class="fas fa-play me-2"></i>Usar Ferramenta</button></div>
                 </div>
             </div>
-                        
             <!-- Protect PDF -->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-lock fa-3x text-danger"></i></div>
-                        <h5 class="card-title">Proteger PDF</h5>
-                        <p class="card-text text-muted flex-grow-1">Adicione senha e criptografia ao documento.</p>
-                        <button class="btn btn-outline-danger tool-select-btn" data-tool="protect"><i class="fas fa-play me-2"></i>Usar Ferramenta</button>
-                    </div>
+                    <div class="card-body text-center p-4 d-flex flex-column"><div class="tool-icon mb-3"><i class="fas fa-lock fa-3x text-danger"></i></div><h5 class="card-title">Proteger PDF</h5><p class="card-text text-muted flex-grow-1">Adicione senha e criptografia ao documento.</p><button class="btn btn-outline-danger tool-select-btn" data-tool="protect"><i class="fas fa-play me-2"></i>Usar Ferramenta</button></div>
                 </div>
             </div>
-            
-            <!-- Remove Password -->
+            <!-- Unlock PDF -->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-unlock fa-3x text-secondary"></i></div>
-                        <h5 class="card-title">Remover Senha</h5>
-                        <p class="card-text text-muted flex-grow-1">Remova a proteção por senha de PDFs.</p>
-                        <button class="btn btn-outline-secondary tool-select-btn" data-tool="unlock"><i class="fas fa-play me-2"></i>Usar Ferramenta</button>
-                    </div>
+                    <div class="card-body text-center p-4 d-flex flex-column"><div class="tool-icon mb-3"><i class="fas fa-unlock fa-3x text-secondary"></i></div><h5 class="card-title">Remover Senha</h5><p class="card-text text-muted flex-grow-1">Remova a proteção por senha de PDFs.</p><button class="btn btn-outline-secondary tool-select-btn" data-tool="unlock"><i class="fas fa-play me-2"></i>Usar Ferramenta</button></div>
                 </div>
             </div>
-            
             <!-- PDF to Word -->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-file-word fa-3x text-primary"></i></div>
-                        <h5 class="card-title">PDF para Word</h5>
-                        <p class="card-text text-muted flex-grow-1">Converta PDF para documento Word (.docx).</p>
-                        <button class="btn btn-outline-primary tool-select-btn" data-tool="pdf-to-word"><i class="fas fa-play me-2"></i>Usar Ferramenta</button>
-                    </div>
+                    <div class="card-body text-center p-4 d-flex flex-column"><div class="tool-icon mb-3"><i class="fas fa-file-word fa-3x text-primary"></i></div><h5 class="card-title">PDF para Word</h5><p class="card-text text-muted flex-grow-1">Converta PDF para documento Word (.docx).</p><button class="btn btn-outline-primary tool-select-btn" data-tool="pdf-to-word"><i class="fas fa-play me-2"></i>Usar Ferramenta</button></div>
+                </div>
+            </div>
+            <!-- PDF to Excel -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column"><div class="tool-icon mb-3"><i class="fas fa-file-excel fa-3x text-success"></i></div><h5 class="card-title">PDF para Excel</h5><p class="card-text text-muted flex-grow-1">Extraia dados do PDF para planilha Excel (.xlsx).</p><button class="btn btn-outline-success tool-select-btn" data-tool="pdf-to-excel"><i class="fas fa-play me-2"></i>Usar Ferramenta</button></div>
+                </div>
+            </div>
+            <!-- PDF to Image -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column"><div class="tool-icon mb-3"><i class="fas fa-image fa-3x text-warning"></i></div><h5 class="card-title">PDF para Imagens</h5><p class="card-text text-muted flex-grow-1">Converta páginas do PDF para JPG ou PNG.</p><button class="btn btn-outline-warning tool-select-btn" data-tool="pdf-to-image"><i class="fas fa-play me-2"></i>Usar Ferramenta</button></div>
+                </div>
+            </div>
+            <!-- Image to PDF -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column"><div class="tool-icon mb-3"><i class="fas fa-file-image fa-3x text-info"></i></div><h5 class="card-title">Imagens para PDF</h5><p class="card-text text-muted flex-grow-1">Converta múltiplas imagens em um PDF.</p><button class="btn btn-outline-info tool-select-btn" data-tool="image-to-pdf"><i class="fas fa-play me-2"></i>Usar Ferramenta</button></div>
+                </div>
+            </div>
+            <!-- Convert Image -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column"><div class="tool-icon mb-3"><i class="fas fa-exchange-alt fa-3x text-secondary"></i></div><h5 class="card-title">Converter Imagem</h5><p class="card-text text-muted flex-grow-1">Converta entre JPG, PNG e outros formatos.</p><button class="btn btn-outline-secondary tool-select-btn" data-tool="convert-image"><i class="fas fa-play me-2"></i>Usar Ferramenta</button></div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Tool Options Modal -->
-<div class="modal fade" id="toolModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="toolModalTitle">Configurar Ferramenta</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="toolModalBody"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="processTool">Processar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Results Modal -->
-<div class="modal fade" id="resultsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Resultado do Processamento</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="resultsModalBody"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Modals -->
+<div class="modal fade" id="toolModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="toolModalTitle"></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="toolModalBody"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-primary" id="processTool">Processar</button></div></div></div></div>
+<div class="modal fade" id="resultsModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Resultado</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="resultsModalBody"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button></div></div></div></div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-</script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;</script>
 <script src="{% static 'js/main.js' %}" defer></script>
 {% endblock %}
