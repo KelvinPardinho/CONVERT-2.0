@@ -1,9 +1,9 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Ferramentas Convert{% endblock %}
 
 {% block content %}
-<!-- O HTML do corpo da página permanece o mesmo -->
 <!-- Header Section -->
 <section class="py-5">
     <div class="container">
@@ -31,7 +31,7 @@
                             <i class="fas fa-upload text-primary me-2"></i>Fazer Upload do PDF
                         </h5>
                         
-                        <form id="uploadForm" action="{% url 'converter:upload_file' %}" method="post" enctype="multipart/form-data">
+                        <form id="uploadForm" method="post" enctype="multipart/form-data">
                             {% csrf_token %}
                             <div class="mb-3">
                                 <input type="file" class="form-control form-control-lg" id="fileInput" name="file" accept=".pdf" required>
@@ -44,13 +44,6 @@
                                 </button>
                             </div>
                         </form>
-                        
-                        <!-- Upload Progress (hidden by default) -->
-                        <div id="uploadProgress" class="mt-3" style="display: none;">
-                            <div class="progress">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"></div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -72,17 +65,11 @@
             <!-- Merge PDFs -->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4">
-                        <div class="tool-icon mb-3">
-                            <i class="fas fa-object-group fa-3x text-primary"></i>
-                        </div>
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon mb-3"><i class="fas fa-object-group fa-3x text-primary"></i></div>
                         <h5 class="card-title">Unir PDFs</h5>
-                        <p class="card-text text-muted">
-                            Combine múltiplos arquivos PDF em um único documento
-                        </p>
-                        <button class="btn btn-outline-primary" onclick="selectTool('merge')">
-                            <i class="fas fa-play me-2"></i>Usar Ferramenta
-                        </button>
+                        <p class="card-text text-muted flex-grow-1">Combine múltiplos arquivos PDF em um único documento.</p>
+                        <button class="btn btn-outline-primary tool-select-btn" data-tool="merge"><i class="fas fa-play me-2"></i>Usar Ferramenta</button>
                     </div>
                 </div>
             </div>
@@ -90,17 +77,11 @@
             <!-- Split PDF -->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4">
-                        <div class="tool-icon mb-3">
-                            <i class="fas fa-cut fa-3x text-success"></i>
-                        </div>
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon mb-3"><i class="fas fa-cut fa-3x text-success"></i></div>
                         <h5 class="card-title">Dividir PDF</h5>
-                        <p class="card-text text-muted">
-                            Separe páginas específicas ou divida por intervalos
-                        </p>
-                        <button class="btn btn-outline-success" onclick="selectTool('split')">
-                            <i class="fas fa-play me-2"></i>Usar Ferramenta
-                        </button>
+                        <p class="card-text text-muted flex-grow-1">Separe páginas específicas ou divida por intervalos.</p>
+                        <button class="btn btn-outline-success tool-select-btn" data-tool="split"><i class="fas fa-play me-2"></i>Usar Ferramenta</button>
                     </div>
                 </div>
             </div>
@@ -108,17 +89,11 @@
             <!-- Compress PDF -->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4">
-                        <div class="tool-icon mb-3">
-                            <i class="fas fa-compress-alt fa-3x text-warning"></i>
-                        </div>
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon mb-3"><i class="fas fa-compress-alt fa-3x text-warning"></i></div>
                         <h5 class="card-title">Comprimir PDF</h5>
-                        <p class="card-text text-muted">
-                            Reduza o tamanho do arquivo mantendo a qualidade
-                        </p>
-                        <button class="btn btn-outline-warning" onclick="selectTool('compress')">
-                            <i class="fas fa-play me-2"></i>Usar Ferramenta
-                        </button>
+                        <p class="card-text text-muted flex-grow-1">Reduza o tamanho do arquivo mantendo a qualidade.</p>
+                        <button class="btn btn-outline-warning tool-select-btn" data-tool="compress"><i class="fas fa-play me-2"></i>Usar Ferramenta</button>
                     </div>
                 </div>
             </div>
@@ -126,17 +101,11 @@
             <!-- Protect PDF -->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4">
-                        <div class="tool-icon mb-3">
-                            <i class="fas fa-lock fa-3x text-danger"></i>
-                        </div>
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon mb-3"><i class="fas fa-lock fa-3x text-danger"></i></div>
                         <h5 class="card-title">Proteger PDF</h5>
-                        <p class="card-text text-muted">
-                            Adicione senha e criptografia ao documento
-                        </p>
-                        <button class="btn btn-outline-danger" onclick="selectTool('protect')">
-                            <i class="fas fa-play me-2"></i>Usar Ferramenta
-                        </button>
+                        <p class="card-text text-muted flex-grow-1">Adicione senha e criptografia ao documento.</p>
+                        <button class="btn btn-outline-danger tool-select-btn" data-tool="protect"><i class="fas fa-play me-2"></i>Usar Ferramenta</button>
                     </div>
                 </div>
             </div>
@@ -144,17 +113,11 @@
             <!-- Remove Password -->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4">
-                        <div class="tool-icon mb-3">
-                            <i class="fas fa-unlock fa-3x text-secondary"></i>
-                        </div>
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon mb-3"><i class="fas fa-unlock fa-3x text-secondary"></i></div>
                         <h5 class="card-title">Remover Senha</h5>
-                        <p class="card-text text-muted">
-                            Remova a proteção por senha de PDFs
-                        </p>
-                        <button class="btn btn-outline-secondary" onclick="selectTool('unlock')">
-                            <i class="fas fa-play me-2"></i>Usar Ferramenta
-                        </button>
+                        <p class="card-text text-muted flex-grow-1">Remova a proteção por senha de PDFs.</p>
+                        <button class="btn btn-outline-secondary tool-select-btn" data-tool="unlock"><i class="fas fa-play me-2"></i>Usar Ferramenta</button>
                     </div>
                 </div>
             </div>
@@ -162,89 +125,11 @@
             <!-- PDF to Word -->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4">
-                        <div class="tool-icon mb-3">
-                            <i class="fas fa-file-word fa-3x text-primary"></i>
-                        </div>
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon mb-3"><i class="fas fa-file-word fa-3x text-primary"></i></div>
                         <h5 class="card-title">PDF para Word</h5>
-                        <p class="card-text text-muted">
-                            Converta PDF para documento Word (.docx)
-                        </p>
-                        <button class="btn btn-outline-primary" onclick="selectTool('pdf-to-word')">
-                            <i class="fas fa-play me-2"></i>Usar Ferramenta
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- PDF to Excel -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4">
-                        <div class="tool-icon mb-3">
-                            <i class="fas fa-file-excel fa-3x text-success"></i>
-                        </div>
-                        <h5 class="card-title">PDF para Excel</h5>
-                        <p class="card-text text-muted">
-                            Extraia dados do PDF para planilha Excel (.xlsx)
-                        </p>
-                        <button class="btn btn-outline-success" onclick="selectTool('pdf-to-excel')">
-                            <i class="fas fa-play me-2"></i>Usar Ferramenta
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- PDF to image -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4">
-                        <div class="tool-icon mb-3">
-                            <i class="fas fa-image fa-3x text-warning"></i>
-                        </div>
-                        <h5 class="card-title">PDF para Imagens</h5>
-                        <p class="card-text text-muted">
-                            Converta páginas do PDF para JPG ou PNG
-                        </p>
-                        <button class="btn btn-outline-warning" onclick="selectTool('pdf-to-image')">
-                            <i class="fas fa-play me-2"></i>Usar Ferramenta
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Image to PDF -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4">
-                        <div class="tool-icon mb-3">
-                            <i class="fas fa-file-image fa-3x text-info"></i>
-                        </div>
-                        <h5 class="card-title">Imagens para PDF</h5>
-                        <p class="card-text text-muted">
-                            Converta múltiplas imagens em um PDF
-                        </p>
-                        <button class="btn btn-outline-info" onclick="selectTool('image-to-pdf')">
-                            <i class="fas fa-play me-2"></i>Usar Ferramenta
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Convert Image Format -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4">
-                        <div class="tool-icon mb-3">
-                            <i class="fas fa-exchange-alt fa-3x text-secondary"></i>
-                        </div>
-                        <h5 class="card-title">Converter Imagem</h5>
-                        <p class="card-text text-muted">
-                            Converta entre JPG, PNG e outros formatos
-                        </p>
-                        <button class="btn btn-outline-secondary" onclick="selectTool('convert-image')">
-                            <i class="fas fa-play me-2"></i>Usar Ferramenta
-                        </button>
+                        <p class="card-text text-muted flex-grow-1">Converta PDF para documento Word (.docx).</p>
+                        <button class="btn btn-outline-primary tool-select-btn" data-tool="pdf-to-word"><i class="fas fa-play me-2"></i>Usar Ferramenta</button>
                     </div>
                 </div>
             </div>
@@ -260,9 +145,7 @@
                 <h5 class="modal-title" id="toolModalTitle">Configurar Ferramenta</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="toolModalBody">
-                <!-- Tool-specific options will be loaded here -->
-            </div>
+            <div class="modal-body" id="toolModalBody"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="processTool">Processar</button>
@@ -279,9 +162,7 @@
                 <h5 class="modal-title">Resultado do Processamento</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" id="resultsModalBody">
-                <!-- Results will be loaded here -->
-            </div>
+            <div class="modal-body" id="resultsModalBody"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
             </div>
@@ -295,611 +176,5 @@
 <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 </script>
-
-<script>
-// =========================================================================
-// JAVASCRIPT FINAL E CORRIGIDO
-// =========================================================================
-
-// --- 1. ESTADO E VARIÁVEIS GLOBAIS ---
-let selectedTool = null;
-let uploadedFile = null;
-let toolState = {
-    merge: { files: [], rotations: {} },
-    split: { selections: [], rotations: [] },
-    image: { rotations: [] },
-    convertImage: { rotation: 0 }
-};
-
-// --- 2. FUNÇÕES DE APOIO E LÓGICA DE UPLOAD ---
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-const csrftoken = getCookie('csrftoken');
-
-document.addEventListener('DOMContentLoaded', function() {
-    const uploadForm = document.getElementById('uploadForm');
-    const fileInput = document.getElementById('fileInput');
-    
-    uploadForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        if (!fileInput.files.length) { return alert('Por favor, selecione um arquivo PDF.'); }
-        
-        const formData = new FormData(this);
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalBtnHTML = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validando...';
-        submitBtn.disabled = true;
-        
-        fetch('/api/upload/', {
-            method: 'POST', body: formData, headers: { 'X-CSRFToken': csrftoken }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Erro no servidor ao validar o arquivo.');
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                uploadedFile = { name: data.filename, numPages: data.num_pages };
-                submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Arquivo Carregado!';
-                submitBtn.classList.replace('btn-primary', 'btn-success');
-                document.querySelectorAll('.tool-card button[data-requires-upload="true"]').forEach(btn => {
-                    btn.disabled = false;
-                });
-                const alertEl = document.createElement('div');
-                alertEl.className = 'alert alert-success mt-3';
-                alertEl.innerHTML = `<i class="fas fa-check-circle me-2"></i>Arquivo <strong>${data.filename}</strong> (${data.numPages} páginas) pronto! Escolha uma ferramenta.`;
-                
-                const existingAlert = uploadForm.querySelector('.alert');
-                if (existingAlert) existingAlert.remove();
-                uploadForm.appendChild(alertEl);
-            } else {
-                throw new Error(data.message || 'Erro ao processar o arquivo no servidor.');
-            }
-        })
-        .catch(error => {
-            alert(error.message);
-            submitBtn.innerHTML = originalBtnHTML;
-            submitBtn.disabled = false;
-        });
-    });
-});
-
-
-// --- 3. CONTROLE PRINCIPAL E MODAIS ---
-function selectTool(tool) {
-    if (document.querySelector(`.tool-card[data-tool-id="${tool}"] button`).disabled) {
-        return alert('Para usar esta ferramenta, por favor, carregue um arquivo PDF na seção "Fazer Upload do PDF" primeiro.');
-    }
-    selectedTool = tool;
-
-    const toolConfigs = {
-        'merge': {
-            title: 'Unir PDFs',
-            body: `<div class="mb-3"><label for="tool-input" class="form-label">Selecione dois ou mais arquivos PDF:</label><input type="file" id="tool-input" class="form-control" multiple accept=".pdf"></div><div id="previewContainer" class="row g-3"><p class="text-muted text-center">Nenhum arquivo selecionado.</p></div>`
-        },
-        'split': {
-            title: 'Dividir PDF',
-            body: `<div class="row border-bottom pb-3 mb-3"><div class="col-md-7"><h6>Modo de Divisão</h6><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitIndividual" value="individual" checked><label class="form-check-label" for="splitIndividual">Extrair páginas selecionadas (.zip)</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitMerge" value="merge"><label class="form-check-label" for="splitMerge">Unir páginas selecionadas</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitPairs" value="pairs"><label class="form-check-label" for="splitPairs">Dividir em pares</label></div></div><div class="col-md-5 d-flex align-items-center justify-content-end"><div id="split-selection-controls" class="form-check me-3"><input class="form-check-input" type="checkbox" id="selectAllPages" onchange="window.App.toggleAllSelections(this.checked)"><label class="form-check-label" for="selectAllPages">Selecionar Todas</label></div><button class="btn btn-secondary" onclick="window.App.rotateAllPreviews()"><i class="fas fa-sync-alt me-2"></i>Girar Todas</button></div></div><div id="previewContainer" class="row g-3 text-center"><div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div></div>`
-        },
-        'compress': {
-            title: 'Comprimir PDF',
-            body: `
-                <div class="mb-3">
-                    <label for="compressionLevel" class="form-label">Nível de Compressão:</label>
-                    <select id="compressionLevel" class="form-select">
-                        <option value="low">Baixa (Melhor Qualidade)</option>
-                        <option value="medium" selected>Média (Equilibrado)</option>
-                        <option value="high">Alta (Menor Tamanho)</option>
-                    </select>
-                </div>`
-        },
-        'protect': {
-            title: 'Proteger PDF',
-            body: `
-                <div class="mb-3"><label for="protectPassword" class="form-label">Defina uma senha:</label><input type="password" id="protectPassword" class="form-control" required></div>
-                <div class="mb-3"><label for="confirmPassword" class="form-label">Confirme a senha:</label><input type="password" id="confirmPassword" class="form-control" required></div>`
-        },
-        'unlock': {
-            title: 'Remover Senha',
-            body: `<div class="mb-3"><label for="unlockPassword" class="form-label">Digite a senha atual:</label><input type="password" id="unlockPassword" class="form-control" required></div>`
-        },
-        'image-to-pdf': {
-            title: 'Imagens para PDF',
-            body: `
-                <div class="mb-3">
-                    <label for="imageFilesInput" class="form-label">Selecione uma ou mais imagens:</label>
-                    <input type="file" id="imageFilesInput" class="form-control" multiple accept="image/*">
-                </div>
-                <div id="imageListPreview" class="mt-3"></div>`
-        },
-        'convert-image': {
-            title: 'Converter Formato de Imagem',
-            // CORREÇÃO: As chamadas onclick agora usam o namespace window.App
-            body: `
-                <div class="row">
-                    <div class="col-md-7">
-                        <div class="mb-3">
-                            <label for="convertImageInput" class="form-label">Selecione uma imagem:</label>
-                            <input type="file" id="convertImageInput" class="form-control" accept="image/*">
-                        </div>
-                        <div id="convertImageOptions" class="d-none">
-                            <div class="mb-3"><label class="form-label">Converter de <strong id="originalFormat"></strong> para:</label><select id="targetFormatSelect" class="form-select"></select></div>
-                            <button class="btn btn-secondary" onclick="window.App.rotateConvertImage()"><i class="fas fa-sync-alt"></i> Girar Imagem</button>
-                        </div>
-                    </div>
-                    <div class="col-md-5 d-flex align-items-center justify-content-center"><div id="imagePreviewContainer" class="text-center"><p class="text-muted">Pré-visualização</p></div></div>
-                </div>`
-        },
-        'pdf-to-word': { title: 'PDF para Word', body: `<p>O arquivo carregado (${uploadedFile?.name || 'PDF'}) será convertido. Clique em processar.</p>` },
-        'pdf-to-excel': { title: 'PDF para Excel', body: `<p>O arquivo carregado (${uploadedFile?.name || 'PDF'}) será convertido. Clique em processar.</p>` },
-        'pdf-to-image': {
-            title: 'Converter PDF para Imagens',
-            body: `
-                <div class="d-flex justify-content-between align-items-center mb-3"><div><label class="form-label mb-0 me-2">Formato:</label><select class="form-select-sm" id="imageFormat"><option value="jpg">JPG</option><option value="png" selected>PNG</option></select></div><div><button class="btn btn-secondary" onclick="window.App.rotateAllPreviews()"><i class="fas fa-sync-alt me-2"></i>Girar Todas</button></div></div>
-                <div id="previewContainer" class="row g-3 text-center"><div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div></div>`
-        },
-    };
-    
-    // Configura e exibe o modal
-    const modalEl = document.getElementById('toolModal');
-    const modalTitle = document.getElementById('toolModalTitle');
-    const modalBody = document.getElementById('toolModalBody');
-    const config = toolConfigs[tool] || { title: `Ferramenta: ${tool.replace(/-/g, ' ')}`, body: `<p>Clique em processar para continuar.</p>` };
-    modalTitle.textContent = config.title;
-    modalBody.innerHTML = config.body;
-    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-    modal.show();
-
-    // Inicializa o estado e os listeners
-    if (tool === 'merge') {
-        toolState.merge = { files: [], rotations: {} };
-        document.getElementById('tool-input').addEventListener('change', renderMergePreview);
-    } else if (tool === 'split') {
-        toolState.split = { selections: [], rotations: [] };
-        renderPagePreview(document.getElementById('fileInput').files[0], 'split', uploadedFile);
-        
-        setTimeout(() => {
-            document.querySelectorAll('input[name="splitMode"]').forEach(radio => {
-                radio.addEventListener('change', window.App.handleSplitModeChange);
-            });
-        }, 100); 
-    
-    } else if (tool === 'pdf-to-image') {
-        toolState.image = { rotations: [] };
-        renderPagePreview(document.getElementById('fileInput').files[0], 'image', uploadedFile);
-    } else if (tool === 'image-to-pdf') {
-        document.getElementById('imageFilesInput').addEventListener('change', (event) => {
-            const files = event.target.files;
-            const previewContainer = document.getElementById('imageListPreview');
-            previewContainer.innerHTML = '';
-            if (files.length > 0) {
-                let fileListHTML = '<h6>Imagens Selecionadas:</h6><ul class="list-group">';
-                Array.from(files).forEach(file => {
-                    fileListHTML += `<li class="list-group-item d-flex align-items-center"><i class="fas fa-file-image me-2 text-info"></i>${file.name}</li>`;
-                });
-                fileListHTML += '</ul>';
-                previewContainer.innerHTML = fileListHTML;
-            }
-        });
-    } else if (tool === 'convert-image') {
-        toolState.convertImage = { rotation: 0 };
-        document.getElementById('convertImageInput').addEventListener('change', renderImageConverterPreview);
-    }
-}
-
-
-// --- 4. FUNÇÕES DE RENDERIZAÇÃO E UI ---
-
-function renderMergePreview(event) {
-    const files = event.target.files;
-    const previewContainer = document.getElementById('previewContainer');
-    previewContainer.innerHTML = '';
-    toolState.merge = { files: Array.from(files), rotations: {} };
-
-    if (files.length === 0) {
-        return previewContainer.innerHTML = '<p class="text-muted text-center">Nenhum arquivo selecionado.</p>';
-    }
-
-    toolState.merge.files.forEach((file, index) => {
-        toolState.merge.rotations[index] = 0;
-        const fileReader = new FileReader();
-        fileReader.onload = (e) => {
-            pdfjsLib.getDocument({ data: e.target.result }).promise.then(pdf => {
-                pdf.getPage(1).then(page => {
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    const scale = 0.3;
-                    const viewport = page.getViewport({ scale });
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    page.render({ canvasContext: context, viewport: viewport });
-
-                    const cardHTML = `
-                        <div class="col-md-4 col-sm-6">
-                            <div class="card h-100">
-                                <div class="card-body p-2 d-flex flex-column align-items-center">
-                                    <p class="mb-1 mt-2 small text-truncate w-100 px-2" title="${file.name}">${file.name}</p>
-                                    <div id="merge-canvas-wrapper-${index}" class="my-2" style="transition: transform 0.3s ease;"></div>
-                                    <button class="btn btn-outline-secondary btn-sm" onclick="rotateMergeFile(${index})">
-                                        <i class="fas fa-sync-alt"></i> Girar Arquivo
-                                    </button>
-                                </div>
-                            </div>
-                        </div>`;
-                    previewContainer.insertAdjacentHTML('beforeend', cardHTML);
-                    document.getElementById(`merge-canvas-wrapper-${index}`).appendChild(canvas);
-                });
-            });
-        };
-        fileReader.readAsArrayBuffer(file);
-    });
-}
-
-function renderPagePreview(file, mode, uploadedFileInfo) {
-    const previewContainer = document.getElementById('previewContainer');
-    if (!file || !uploadedFileInfo || !uploadedFileInfo.numPages) { 
-        previewContainer.innerHTML = `<div class="alert alert-danger">Não foi possível carregar a pré-visualização. Por favor, recarregue a página e o arquivo.</div>`;
-        return;
-    }
-    const numPages = uploadedFileInfo.numPages;
-    previewContainer.innerHTML = `<div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Renderizando ${numPages} páginas...</div>`;
-
-    const fileReader = new FileReader();
-    fileReader.onload = (e) => {
-        pdfjsLib.getDocument({ data: e.target.result }).promise.then(pdf => {
-            previewContainer.innerHTML = '';
-            if (mode === 'split') toolState.split = { selections: Array(numPages).fill(false), rotations: Array(numPages).fill(0) };
-            if (mode === 'image') toolState.image = { rotations: Array(numPages).fill(0) };
-            
-            for (let i = 1; i <= numPages; i++) {
-                (function(pageNum) {
-                    pdf.getPage(pageNum).then(page => {
-                        const canvas = document.createElement('canvas');
-                        const context = canvas.getContext('2d');
-                        const scale = 0.3;
-                        const viewport = page.getViewport({ scale });
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-                        page.render({ canvasContext: context, viewport: viewport });
-
-                        let optionsHTML = '';
-                        if (mode === 'split') {
-                            optionsHTML = `<div class="form-check d-flex align-items-center justify-content-center mb-2">
-                                <input class="form-check-input mt-0" type="checkbox" id="page-checkbox-${pageNum-1}" onchange="togglePageSelection(${pageNum-1})">
-                                <label class="form-check-label ms-2 small" for="page-checkbox-${pageNum-1}">Página ${pageNum}</label>
-                            </div>`;
-                        } else {
-                            optionsHTML = `<p class="mb-1 mt-2 small">Página ${pageNum}</p>`;
-                        }
-
-                        const cardHTML = `
-                            <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6">
-                                <div class="card h-100">
-                                    <div class="card-body p-2 d-flex flex-column align-items-center">
-                                        ${optionsHTML}
-                                        <div id="page-canvas-wrapper-${pageNum-1}" class="my-1" style="transition: transform 0.3s ease;"></div>
-                                        <button class="btn btn-outline-secondary btn-sm" onclick="rotatePagePreview(${pageNum-1})">
-                                            <i class="fas fa-sync-alt"></i> Girar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>`;
-                        previewContainer.insertAdjacentHTML('beforeend', cardHTML);
-                        document.getElementById(`page-canvas-wrapper-${pageNum-1}`).appendChild(canvas);
-                    });
-                })(i);
-            }
-        });
-    };
-    fileReader.readAsArrayBuffer(file);
-}
-
-function renderImageConverterPreview(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const previewContainer = document.getElementById('imagePreviewContainer');
-    const optionsContainer = document.getElementById('convertImageOptions');
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        previewContainer.innerHTML = `<img id="imagePreview" src="${e.target.result}" class="img-fluid" style="max-height: 250px; transition: transform 0.3s ease;">`;
-    };
-    reader.readAsDataURL(file);
-
-    const originalFormat = file.type.split('/')[1].toUpperCase().replace('JPEG', 'JPG');
-    document.getElementById('originalFormat').textContent = originalFormat;
-
-    const availableFormats = ['PNG', 'JPG', 'WEBP', 'BMP', 'TIFF'];
-    const targetSelect = document.getElementById('targetFormatSelect');
-    targetSelect.innerHTML = '';
-
-    availableFormats.forEach(format => {
-        if (format !== originalFormat) {
-            const option = document.createElement('option');
-            option.value = format;
-            option.textContent = format;
-            targetSelect.appendChild(option);
-        }
-    });
-
-    optionsContainer.classList.remove('d-none');
-}
-
-// <<< INÍCIO DA CORREÇÃO >>>
-// As funções abaixo foram movidas para fora do DOMContentLoaded para se tornarem globais
-// e acessíveis pelos eventos 'onclick' e 'onchange'.
-
-function rotateConvertImage() {
-    const img = document.getElementById('imagePreview');
-    if (!img) return;
-    toolState.convertImage.rotation = (toolState.convertImage.rotation + 90) % 360;
-    img.style.transform = `rotate(${toolState.convertImage.rotation}deg)`;
-}
-
-function rotateMergeFile(fileIndex) {
-    toolState.merge.rotations[fileIndex] = (toolState.merge.rotations[fileIndex] + 90) % 360;
-    const wrapper = document.getElementById(`merge-canvas-wrapper-${fileIndex}`);
-    if (wrapper) wrapper.style.transform = `rotate(${toolState.merge.rotations[fileIndex]}deg)`;
-}
-
-function rotatePagePreview(pageIndex) {
-    const state = (selectedTool === 'split') ? toolState.split : toolState.image;
-    if (!state || !state.rotations) return;
-    state.rotations[pageIndex] = (state.rotations[pageIndex] + 90) % 360;
-    const wrapper = document.getElementById(`page-canvas-wrapper-${pageIndex}`);
-    if (wrapper) wrapper.style.transform = `rotate(${state.rotations[pageIndex]}deg)`;
-}
-
-function togglePageSelection(pageIndex) {
-    toolState.split.selections[pageIndex] = !toolState.split.selections[pageIndex];
-    const selectAllCheckbox = document.getElementById('selectAllPages');
-    if (!selectAllCheckbox) return;
-    if (!toolState.split.selections[pageIndex]) {
-        selectAllCheckbox.checked = false;
-    } else if (toolState.split.selections.every(s => s)) {
-        selectAllCheckbox.checked = true;
-    }
-}
-
-function toggleAllSelections(isChecked) {
-    if (!toolState.split.selections) return;
-    toolState.split.selections.fill(isChecked);
-    for (let i = 0; i < toolState.split.selections.length; i++) {
-        const checkbox = document.getElementById(`page-checkbox-${i}`);
-        if (checkbox) checkbox.checked = isChecked;
-    }
-}
-
-function rotateAllPreviews() {
-    const state = (selectedTool === 'split') ? toolState.split : toolState.image;
-    if (!state || !state.rotations || state.rotations.length === 0) return;
-    for (let i = 0; i < state.rotations.length; i++) {
-        rotatePagePreview(i);
-    }
-};
-
-
-// --- 5. LÓGICA DE PROCESSAMENTO ---
-async function processSelectedTool() {
-    const formData = new FormData();
-    const fileInput = document.getElementById('fileInput');
-
-    // Ferramentas que usam seus próprios seletores de arquivo
-    if (selectedTool === 'merge') {
-        const mergeFilesInput = document.getElementById('mergeFilesInput');
-        if (mergeFilesInput.files.length < 2) {
-            throw new Error('Por favor, selecione pelo menos 2 arquivos PDF.');
-        }
-        const rotationsArray = [];
-        toolState.merge.files.forEach((file, index) => {
-            formData.append('files', file);
-            rotationsArray.push(toolState.merge.rotations[index] || 0);
-        });
-        formData.append('rotations', JSON.stringify(rotationsArray));
-
-    } else if (selectedTool === 'image-to-pdf') {
-        const imageFilesInput = document.getElementById('imageFilesInput');
-        if (imageFilesInput.files.length === 0) {
-            throw new Error('Por favor, selecione pelo menos uma imagem.');
-        }
-        Array.from(imageFilesInput.files).forEach(file => {
-            formData.append('files', file);
-        });
-
-    } else if (selectedTool === 'convert-image') {
-        const imageInput = document.getElementById('convertImageInput');
-        if (!imageInput.files.length) {
-            throw new Error('Por favor, selecione uma imagem para converter.');
-        }
-        formData.append('file', imageInput.files[0]);
-        formData.append('target_format', document.getElementById('targetFormatSelect').value);
-        formData.append('rotation', toolState.convertImage.rotation);
-
-    // Ferramentas que lidam com um único arquivo PDF principal
-    } else {
-        // A validação do arquivo principal agora acontece aqui
-        if (!fileInput.files.length) {
-            throw new Error('Nenhum arquivo PDF carregado. Por favor, use a seção "Carregar um PDF" primeiro.');
-        }
-        formData.append('file', fileInput.files[0]);
-
-        switch (selectedTool) {
-            case 'split':
-                if (toolState.split.selections.every(s => !s)) throw new Error('Nenhuma página foi selecionada.');
-                formData.append('split_mode', document.querySelector('input[name="splitMode"]:checked').value);
-                formData.append('selections', JSON.stringify(toolState.split.selections));
-                formData.append('rotations', JSON.stringify(toolState.split.rotations));
-                break;
-
-            case 'compress':
-                formData.append('compression_level', document.getElementById('compressionLevel').value);
-                break;
-                
-            case 'protect':
-                const password = document.getElementById('protectPassword').value;
-                const confirm = document.getElementById('confirmPassword').value;
-                if (!password) throw new Error('O campo de senha não pode estar vazio.');
-                if (password !== confirm) throw new Error('As senhas não coincidem.');
-                formData.append('password', password);
-                break;
-
-            case 'unlock':
-                const unlockPassword = document.getElementById('unlockPassword').value;
-                if (!unlockPassword) throw new Error('Por favor, digite a senha atual do PDF.');
-                formData.append('password', unlockPassword);
-                break;
-
-            case 'pdf-to-image':
-                formData.append('image_format', document.getElementById('imageFormat').value);
-                formData.append('rotations', JSON.stringify(toolState.image.rotations));
-                break;
-            
-            // Ferramentas simples como pdf-to-word e pdf-to-excel não precisam de casos aqui,
-            // pois só precisam do 'file' que já foi adicionado.
-        }
-    }
-    
-    // O código de envio permanece o mesmo para todas as ferramentas
-    return fetch(`/tools/${selectedTool}/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': csrftoken },
-        body: formData
-    }).then(response => {
-        if (!response.ok) {
-            return response.json().catch(() => {
-                throw new Error(`Erro no servidor: ${response.status} ${response.statusText}`);
-            }).then(err => { throw new Error(err.message || 'Erro desconhecido.'); });
-        }
-        return response.json();
-    });
-}
-
-// --- 6. LISTENER DO BOTÃO E RESULTADOS ---
-document.getElementById('processTool').addEventListener('click', function() {
-    const button = this;
-    const originalText = "Processar";
-    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
-    button.disabled = true;
-
-    processSelectedTool().then(result => {
-        if (result.success) {
-            bootstrap.Modal.getInstance(document.getElementById('toolModal')).hide();
-            showResults(result);
-        } else {
-            alert(result.message || 'Ocorreu um erro ao processar.');
-        }
-    }).catch(error => {
-        alert(`Erro: ${error.message}`);
-    }).finally(() => {
-        button.textContent = originalText;
-        button.disabled = false;
-    });
-});
-
-function showResults(result) {
-    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('resultsModal'));
-    const modalBody = document.getElementById('resultsModalBody');
-    let content = `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>${result.message}</div>`;
-    
-    if (result.download_url) {
-        content += `<div class="text-center mb-3"><a href="${result.download_url}" class="btn btn-primary btn-lg" download><i class="fas fa-download me-2"></i>Baixar Arquivo</a></div>`;
-    }
-    if (result.download_zip) {
-        content += `<div class="text-center mb-3"><a href="${result.download_zip}" class="btn btn-success btn-lg" download><i class="fas fa-file-archive me-2"></i>Baixar Arquivos (.zip)</a></div>`;
-    }
-    if (result.compression_ratio) {
-        content += `<hr><div class="row text-center">
-            <div class="col-4"><strong>Tamanho Original</strong><br><span class="text-muted">${result.original_size}</span></div>
-            <div class="col-4"><strong>Novo Tamanho</strong><br><span class="text-muted">${result.compressed_size}</span></div>
-            <div class="col-4"><strong>Redução</strong><br><span class="text-success fw-bold">${result.compression_ratio}</span></div>
-        </div>`;
-    }
-    
-    modalBody.innerHTML = content;
-    modal.show();
-}
-
-
-// =========================================================================
-// --- 7. NAMESPACE GLOBAL PARA FUNÇÕES DE CONTROLE DE UI ---
-// =========================================================================
-// Colocar as funções aqui garante que elas sejam acessíveis pelos 'onclick' no HTML
-window.App = {
-    rotateConvertImage: function() {
-        const img = document.getElementById('imagePreview');
-        if (!img) return;
-        toolState.convertImage.rotation = (toolState.convertImage.rotation + 90) % 360;
-        img.style.transform = `rotate(${toolState.convertImage.rotation}deg)`;
-    },
-
-    rotateMergeFile: function(fileIndex) {
-        toolState.merge.rotations[fileIndex] = (toolState.merge.rotations[fileIndex] + 90) % 360;
-        const wrapper = document.getElementById(`merge-canvas-wrapper-${fileIndex}`);
-        if (wrapper) wrapper.style.transform = `rotate(${toolState.merge.rotations[fileIndex]}deg)`;
-    },
-
-    rotatePagePreview: function(pageIndex) {
-        const state = (selectedTool === 'split') ? toolState.split : toolState.image;
-        if (!state || !state.rotations) return;
-        state.rotations[pageIndex] = (state.rotations[pageIndex] + 90) % 360;
-        const wrapper = document.getElementById(`page-canvas-wrapper-${pageIndex}`);
-        if (wrapper) wrapper.style.transform = `rotate(${state.rotations[pageIndex]}deg)`;
-    },
-
-    togglePageSelection: function(pageIndex) {
-        toolState.split.selections[pageIndex] = !toolState.split.selections[pageIndex];
-        const selectAllCheckbox = document.getElementById('selectAllPages');
-        if (!selectAllCheckbox) return;
-        if (!toolState.split.selections[pageIndex]) {
-            selectAllCheckbox.checked = false;
-        } else if (toolState.split.selections.every(s => s)) {
-            selectAllCheckbox.checked = true;
-        }
-    },
-
-    toggleAllSelections: function(isChecked) {
-        if (!toolState.split.selections) return;
-        toolState.split.selections.fill(isChecked);
-        for (let i = 0; i < toolState.split.selections.length; i++) {
-            const checkbox = document.getElementById(`page-checkbox-${i}`);
-            if (checkbox) checkbox.checked = isChecked;
-        }
-    },
-
-    rotateAllPreviews: function() {
-        const state = (selectedTool === 'split') ? toolState.split : toolState.image;
-        if (!state || !state.rotations || state.rotations.length === 0) return;
-        for (let i = 0; i < state.rotations.length; i++) {
-            this.rotatePagePreview(i);
-        }
-    },
-
-    handleSplitModeChange: function(radioElement) {
-        const mode = radioElement.value;
-        const previewContainer = document.getElementById('previewContainer');
-        const selectionControls = document.getElementById('split-selection-controls');
-        
-        if (mode === 'pairs') {
-            if(selectionControls) selectionControls.style.display = 'none';
-            if(previewContainer) previewContainer.querySelectorAll('.form-check').forEach(el => el.style.display = 'none');
-        } else {
-            if(selectionControls) selectionControls.style.display = 'block';
-            if(previewContainer) previewContainer.querySelectorAll('.form-check').forEach(el => el.style.display = 'flex');
-        }
-    }
-};
-</script>
+<script src="{% static 'js/main.js' %}" defer></script>
 {% endblock %}

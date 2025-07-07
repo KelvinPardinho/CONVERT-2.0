@@ -4,10 +4,11 @@ from . import views
 app_name = 'converter'
 
 urlpatterns = [
-
     path('', views.home, name='home'),
     path('ferramentas/', views.index, name='converter_index'),
     path('assinar/', views.sign_index, name='sign_index'),
+
+    # API Endpoints
     path('api/upload/', views.upload_file, name='upload_file'),
     path('api/merge/', views.merge_pdf, name='merge_pdf'),
     path('api/split/', views.split_pdf, name='split_pdf'),
