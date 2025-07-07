@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const formData = new FormData(this);
             const submitBtn = this.querySelector('button[type="submit"]');
-            const originalBtnHTML = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validando...';
             submitBtn.disabled = true;
             
@@ -59,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 alert(error.message);
-                submitBtn.innerHTML = originalBtnHTML;
+                submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Enviar Arquivo';
                 submitBtn.disabled = false;
             });
         });
@@ -103,19 +102,26 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('input[name="splitMode"]').forEach(radio => radio.addEventListener('change', handleSplitModeChange));
             document.getElementById('selectAllPages').addEventListener('change', (e) => App.toggleAllSelections(e.target.checked));
             document.getElementById('rotateAllBtn').addEventListener('click', () => App.rotateAllPreviews());
-            handleSplitModeChange(); // Chama uma vez para definir o estado inicial
+            handleSplitModeChange();
         }
     }
 
+    // LÓGICA CORRIGIDA PARA O SPLIT
     function handleSplitModeChange() {
         const selectedMode = document.querySelector('input[name="splitMode"]:checked').value;
         const pageControls = document.getElementById('splitPageControls');
         const previewContainer = document.getElementById('previewContainer');
         
-        const showControls = selectedMode === 'individual' || selectedMode === 'merge';
+        const showSelectionUI = selectedMode === 'individual' || selectedMode === 'merge';
         
-        if (pageControls) pageControls.style.display = showControls ? 'flex' : 'none';
-        if (previewContainer) previewContainer.style.display = showControls ? 'flex' : 'none';
+        if (pageControls) pageControls.style.display = showSelectionUI ? 'flex' : 'none';
+        
+        // Esconde/mostra apenas os checkboxes dentro dos cards, não o container inteiro
+        if (previewContainer) {
+            previewContainer.querySelectorAll('.form-check').forEach(el => {
+                el.style.display = showSelectionUI ? 'flex' : 'none';
+            });
+        }
     }
 
     function renderPagePreview(file, uploadedFileInfo) {
@@ -143,6 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.getElementById(`page-canvas-wrapper-${i-1}`).appendChild(canvas);
                     });
                 }
+                handleSplitModeChange(); // Garante que a UI esteja correta após renderizar
             });
         };
         fileReader.readAsArrayBuffer(file);

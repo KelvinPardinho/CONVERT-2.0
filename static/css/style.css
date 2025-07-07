@@ -1,13 +1,15 @@
+/* static/css/style.css (VERSÃO FINAL SEM MODO ESCURO E COM NAVBAR CORRIGIDA) */
+
 :root {
-    --bg-color: #f4f4f4;
-    --text-color: #222;
+    --bg-color: #f8f9fa;
+    --text-color: #212529;
     --card-bg-color: #ffffff;
     --card-border-color: #dee2e6;
-    --navbar-bg-color: #2D2D34;
+    --navbar-bg-color: #2D2D34; /* Cor escura da navbar */
     --navbar-text-color: #E0E0E0;
     --navbar-text-hover-color: #FFFFFF;
     --primary-color: #0d6efd;
-    --footer-bg-color: #35424a;
+    --footer-bg-color: #343a40;
     --footer-text-color: #ffffff;
 }
 
@@ -18,6 +20,29 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
 }
+
+/* --- ESTILOS DA NAVBAR RESTAURADOS --- */
+.navbar-custom {
+    background-color: var(--navbar-bg-color) !important;
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem;
+}
+.navbar-custom .navbar-brand {
+    color: var(--navbar-text-hover-color) !important;
+    font-weight: bold;
+}
+.navbar-custom .nav-link {
+    color: var(--navbar-text-color) !important;
+    transition: color 0.2s ease-in-out;
+}
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-link.active {
+    color: var(--navbar-text-hover-color) !important;
+}
+.navbar-dark .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+/* --- FIM DOS ESTILOS DA NAVBAR --- */
 
 .card, .bg-light, .bg-white {
     background-color: var(--card-bg-color) !important;
@@ -40,5 +65,5 @@ footer {
     background: var(--footer-bg-color);
     color: var(--footer-text-color);
     text-align: center;
-    padding: 10px 0;
+    padding: 20px 0;
 }
