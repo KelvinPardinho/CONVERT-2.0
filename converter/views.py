@@ -123,7 +123,7 @@ def split_pdf(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
 
-    try: # Adiciona um bloco try...except para capturar todos os erros
+    try:
         pdf_file = request.FILES.get('file')
         if not pdf_file:
             return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
@@ -132,9 +132,15 @@ def split_pdf(request):
         selections = json.loads(request.POST.get('selections', '[]'))
         rotations = json.loads(request.POST.get('rotations', '[]'))
 
+        # Verificação explícita no backend
+        if (split_mode == 'individual' or split_mode == 'merge') and not any(selections):
+             return JsonResponse({'success': False, 'message': 'Nenhuma página foi selecionada.'}, status=400)
+
         base_filename = os.path.splitext(pdf_file.name)[0]
 
-        # Sua função de serviço `process_split_pdf` espera bytes, então `.read()` está correto.
+        # <<< A CORREÇÃO ESTÁ AQUI >>>
+        # Lemos o conteúdo do arquivo em bytes e o passamos para a função de serviço.
+        # Isso garante que a função `process_split_pdf` receba o tipo de dado correto.
         success, message, output_filename, _ = process_split_pdf(
             pdf_file_bytes=pdf_file.read(),
             split_mode=split_mode,
@@ -145,7 +151,7 @@ def split_pdf(request):
         )
 
         if not success:
-            return JsonResponse({'success': False, 'message': message}, status=400) # Retorna erro como JSON
+            return JsonResponse({'success': False, 'message': message}, status=400)
 
         response_data = {'success': True, 'message': message}
         download_url = reverse('converter:download_converted', args=[output_filename])
@@ -157,7 +163,7 @@ def split_pdf(request):
         return JsonResponse(response_data)
         
     except Exception as e:
-        # Captura qualquer exceção inesperada (como o TypeError) e retorna um JSON de erro
+        # Captura qualquer outra exceção e retorna um JSON de erro
         return JsonResponse({'success': False, 'message': f'Ocorreu um erro interno no servidor: {str(e)}'}, status=500)
 
 def compress_pdf(request):
