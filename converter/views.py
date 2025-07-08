@@ -1,13 +1,13 @@
-# converter/views.py (VERSÃO FINAL COM URLS CORRIGIDAS USANDO reverse)
+# converter/views.py (VERSÃO FINAL COM CORREÇÃO NO SPLIT_PDF)
 
 from django.shortcuts import render
 from django.http import JsonResponse, FileResponse, Http404, HttpRequest
 from django.conf import settings
-from django.urls import reverse # <-- IMPORTAÇÃO NECESSÁRIA
+from django.urls import reverse
 import os
 import time
 import json
-import fitz  # PyMuPDF
+import fitz
 from .services.pdf_to_word import convert_pdf_to_word
 from .services.pdf_to_excel import convert_pdf_to_excel
 from .services.pdf_to_image import convert_pdf_to_images
@@ -18,7 +18,6 @@ from .services.protect_pdf import process_protect_pdf
 from .services.unlock_pdf import process_unlock_pdf
 from .services.image_to_pdf import process_image_to_pdf
 from .services.convert_image import process_convert_image
-# from .services.sign_pdf import process_split_pdf # Este import parece incorreto, comentei
 
 def clean_old_converted_files():
     converted_dir = os.path.join(settings.MEDIA_ROOT, 'converted')
@@ -32,7 +31,6 @@ def clean_old_converted_files():
                 except OSError: pass
 
 def get_converted_dir():
-    """Cria e retorna o diretório para arquivos convertidos."""
     converted_dir = os.path.join(settings.MEDIA_ROOT, 'converted')
     os.makedirs(converted_dir, exist_ok=True)
     return converted_dir
@@ -49,8 +47,7 @@ def sign_index(request):
 def upload_file(request):
     if request.method == "POST":
         uploaded_file = request.FILES.get('file')
-        if not uploaded_file:
-            return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
+        if not uploaded_file: return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
         try:
             doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
             num_pages = doc.page_count
@@ -61,7 +58,7 @@ def upload_file(request):
     return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
 
 
-# --- VIEWS DAS FERRAMENTAS COM URL DE DOWNLOAD CORRIGIDA ---
+# --- VIEWS DAS FERRAMENTAS ---
 
 def convert_image(request):
     clean_old_converted_files()
@@ -75,7 +72,6 @@ def convert_image(request):
 
     success, message, output_filename, _ = process_convert_image(image_file, target_format, rotation_angle, get_converted_dir())
     if not success: return JsonResponse({'success': False, 'message': message}, status=500)
-    
     return JsonResponse({'success': True, 'message': message, 'download_url': reverse('converter:download_converted', args=[output_filename])})
 
 def image_to_pdf(request):
@@ -83,10 +79,8 @@ def image_to_pdf(request):
     if request.method != 'POST': return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
     image_files = request.FILES.getlist('files')
     if not image_files: return JsonResponse({'success': False, 'message': 'Nenhuma imagem enviada.'}, status=400)
-
     success, message, output_filename, _ = process_image_to_pdf(image_files, get_converted_dir())
     if not success: return JsonResponse({'success': False, 'message': message}, status=500)
-
     return JsonResponse({'success': True, 'message': message, 'download_url': reverse('converter:download_converted', args=[output_filename])})
 
 def unlock_pdf(request):
@@ -97,10 +91,8 @@ def unlock_pdf(request):
     if not pdf_file: return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
     if not password: return JsonResponse({'success': False, 'message': 'Nenhuma senha fornecida.'}, status=400)
     base_filename = os.path.splitext(pdf_file.name)[0]
-
     success, message, output_filename, _ = process_unlock_pdf(pdf_file.read(), password, get_converted_dir(), base_filename)
     if not success: return JsonResponse({'success': False, 'message': message}, status=500)
-
     return JsonResponse({'success': True, 'message': message, 'download_url': reverse('converter:download_converted', args=[output_filename])})
 
 def protect_pdf(request):
@@ -111,10 +103,8 @@ def protect_pdf(request):
     if not pdf_file: return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
     if not password: return JsonResponse({'success': False, 'message': 'Nenhuma senha fornecida.'}, status=400)
     base_filename = os.path.splitext(pdf_file.name)[0]
-
     success, message, output_filename, _ = process_protect_pdf(pdf_file.read(), password, get_converted_dir(), base_filename)
     if not success: return JsonResponse({'success': False, 'message': message}, status=500)
-
     return JsonResponse({'success': True, 'message': message, 'download_url': reverse('converter:download_converted', args=[output_filename])})
 
 def merge_pdf(request):
@@ -124,36 +114,54 @@ def merge_pdf(request):
     if len(pdf_files) < 2: return JsonResponse({'success': False, 'message': 'Selecione pelo menos 2 arquivos.'}, status=400)
     try: rotations = json.loads(request.POST.get('rotations', '[]'))
     except json.JSONDecodeError: return JsonResponse({'success': False, 'message': 'Dados de rotação inválidos.'}, status=400)
-
     success, message, output_filename = process_merge_pdf(pdf_files, rotations, get_converted_dir())
     if not success: return JsonResponse({'success': False, 'message': message}, status=500)
-        
     return JsonResponse({'success': True, 'message': message, 'download_url': reverse('converter:download_converted', args=[output_filename])})
 
+# =========================================================================
+# VIEW CORRIGIDA
+# =========================================================================
 def split_pdf(request):
     clean_old_converted_files()
-    if request.method != 'POST': return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
+
     pdf_file = request.FILES.get('file')
-    if not pdf_file: return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
+    if not pdf_file:
+        return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
+        
     try:
         split_mode = request.POST.get('split_mode', 'individual')
         selections = json.loads(request.POST.get('selections', '[]'))
         rotations = json.loads(request.POST.get('rotations', '[]'))
-    except json.JSONDecodeError: return JsonResponse({'success': False, 'message': 'Dados de formulário inválidos.'}, status=400)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Dados de formulário inválidos.'}, status=400)
+
     base_filename = os.path.splitext(pdf_file.name)[0]
 
-    # Sua lógica `process_split_pdf` espera o objeto de arquivo, não bytes. Isso está correto.
-    success, message, output_filename, _ = process_split_pdf(pdf_file, split_mode, selections, rotations, get_converted_dir(), base_filename)
-    if not success: return JsonResponse({'success': False, 'message': message}, status=500)
+    # <<< A CORREÇÃO ESTÁ AQUI >>>
+    # Agora passamos `pdf_file.read()` para a função de serviço, que espera bytes.
+    success, message, output_filename, _ = process_split_pdf(
+        pdf_file_bytes=pdf_file.read(), # Alterado aqui
+        split_mode=split_mode,
+        selections=selections,
+        rotations=rotations,
+        output_dir=get_converted_dir(),
+        base_filename=base_filename
+    )
+
+    if not success:
+        return JsonResponse({'success': False, 'message': message}, status=500)
 
     response_data = {'success': True, 'message': message}
-    download_url = reverse('converter:download_converted', args=[output_filename]) # CORREÇÃO
+    download_url = reverse('converter:download_converted', args=[output_filename])
     if '.zip' in output_filename:
         response_data['download_zip'] = download_url
     else:
         response_data['download_url'] = download_url
         
     return JsonResponse(response_data)
+# =========================================================================
 
 def compress_pdf(request):
     clean_old_converted_files()
@@ -162,10 +170,8 @@ def compress_pdf(request):
     if not pdf_file: return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
     compression_level = request.POST.get('compression_level', 'medium')
     base_filename = os.path.splitext(pdf_file.name)[0]
-
     success, message, output_filename, original_size, compressed_size, ratio = process_compress_pdf(pdf_file.read(), get_converted_dir(), base_filename, compression_level)
     if not success: return JsonResponse({'success': False, 'message': message}, status=500)
-
     return JsonResponse({'success': True, 'message': message, 'download_url': reverse('converter:download_converted', args=[output_filename]), 'original_size': original_size, 'compressed_size': compressed_size, 'compression_ratio': ratio})
 
 def pdf_to_word(request):
@@ -173,7 +179,6 @@ def pdf_to_word(request):
     if request.method == "POST":
         uploaded_file = request.FILES.get('file')
         if not uploaded_file: return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
-        
         success, converted_filename, error_message = convert_pdf_to_word(uploaded_file, get_converted_dir())
         if success:
             return JsonResponse({'success': True, 'message': 'Conversão para Word realizada!', 'download_url': reverse('converter:download_converted', args=[converted_filename])})
@@ -186,7 +191,6 @@ def pdf_to_excel(request):
     if request.method == "POST":
         uploaded_file = request.FILES.get('file')
         if not uploaded_file: return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
-        
         success, converted_filename, error_message = convert_pdf_to_excel(uploaded_file, get_converted_dir())
         if success:
             return JsonResponse({'success': True, 'message': 'Conversão para Excel realizada!', 'download_url': reverse('converter:download_converted', args=[converted_filename])})
@@ -202,15 +206,12 @@ def pdf_to_image(request: HttpRequest) -> JsonResponse:
     image_format = request.POST.get('image_format', 'png').lower()
     try: rotations = json.loads(request.POST.get('rotations', '[]'))
     except json.JSONDecodeError: return JsonResponse({'success': False, 'message': 'Dados de rotação inválidos.'}, status=400)
-
     success, message, output_filename = convert_pdf_to_images(uploaded_file, get_converted_dir(), image_format, rotations)
     if not success: return JsonResponse({'success': False, 'message': message}, status=500)
-
     return JsonResponse({'success': True, 'message': message, 'download_zip': reverse('converter:download_converted', args=[output_filename])})
 
 def download_converted(request, filename):
     file_path = os.path.join(get_converted_dir(), filename)
     if not os.path.exists(file_path):
         raise Http404("Arquivo não encontrado. Pode ter expirado.")
-    
     return FileResponse(open(file_path, 'rb'), as_attachment=True)
