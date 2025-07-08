@@ -1,5 +1,5 @@
 // =========================================================================
-// static/js/main.js (VERSÃO FINAL, COMPLETA E COM TODAS AS FERRAMENTAS)
+// static/js/main.js (VERSÃO FINAL GARANTIDA COM TODAS AS CORREÇÕES)
 // =========================================================================
 
 function getCookie(name) {
@@ -22,10 +22,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const csrftoken = getCookie('csrftoken');
     let selectedTool = null;
     let uploadedFile = null;
+    
+    // Variável de estado acessível por todas as funções dentro deste escopo
     let toolState = {
         split: { selections: [], rotations: [] },
-        image: { rotations: [] }, // Restaurado para pdf-to-image
-        convertImage: { rotation: 0 } // Restaurado para convert-image
+        image: { rotations: [] },
+        convertImage: { rotation: 0 }
     };
 
     const uploadForm = document.getElementById('uploadForm');
@@ -37,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!fileInput.files.length) return alert('Por favor, selecione um arquivo PDF.');
             const formData = new FormData(this);
             const submitBtn = this.querySelector('button[type="submit"]');
-            const originalBtnHTML = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validando...';
             submitBtn.disabled = true;
             fetch('/api/upload/', { method: 'POST', body: formData, headers: { 'X-CSRFToken': csrftoken } })
@@ -77,7 +78,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         selectedTool = tool;
 
-        // --- LÓGICA COMPLETA DE TODAS AS FERRAMENTAS RESTAURADA ---
         const toolConfigs = {
             'split': { title: 'Dividir PDF', body: `<div class="row border-bottom pb-3 mb-3"><div class="col-md-7"><h6>Modo de Divisão</h6><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitIndividual" value="individual" checked><label class="form-check-label" for="splitIndividual">Extrair páginas selecionadas (.zip)</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitMerge" value="merge"><label class="form-check-label" for="splitMerge">Unir páginas selecionadas</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitPairs" value="pairs"><label class="form-check-label" for="splitPairs">Dividir em pares</label></div></div><div class="col-md-5 d-flex align-items-center justify-content-end" id="splitPageControls"><div class="form-check me-3"><input class="form-check-input" type="checkbox" id="selectAllPages"><label class="form-check-label" for="selectAllPages">Selecionar Todas</label></div><button class="btn btn-secondary" id="rotateAllBtn"><i class="fas fa-sync-alt me-2"></i>Girar Todas</button></div></div><div id="previewContainer" class="row g-3 text-center"><div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div></div>` },
             'compress': { title: 'Comprimir PDF', body: `<div class="mb-3"><label for="compressionLevel" class="form-label">Nível de Compressão:</label><select id="compressionLevel" class="form-select"><option value="low">Baixa (Melhor Qualidade)</option><option value="medium" selected>Média (Equilibrado)</option><option value="high">Alta (Menor Tamanho)</option></select></div>` },
@@ -98,28 +98,25 @@ document.addEventListener('DOMContentLoaded', function() {
         modalBody.innerHTML = config.body;
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
 
-        // Adiciona listeners específicos após o HTML do modal ser criado
         switch (tool) {
             case 'split':
                 toolState.split = { selections: [], rotations: [] };
                 renderPagePreview(uploadedFile.file, uploadedFile, 'split');
                 document.querySelectorAll('input[name="splitMode"]').forEach(radio => radio.addEventListener('change', handleSplitModeChange));
-                document.getElementById('selectAllPages').addEventListener('change', (e) => App.toggleAllSelections(e.target.checked));
-                document.getElementById('rotateAllBtn').addEventListener('click', () => App.rotateAllPreviews('split'));
+                document.getElementById('selectAllPages').addEventListener('change', (e) => window.App.toggleAllSelections(e.target.checked));
+                document.getElementById('rotateAllBtn').addEventListener('click', () => window.App.rotateAllPreviews('split'));
                 handleSplitModeChange();
                 break;
             case 'pdf-to-image':
                 toolState.image = { rotations: [] };
                 renderPagePreview(uploadedFile.file, uploadedFile, 'image');
-                document.getElementById('rotateAllBtn').addEventListener('click', () => App.rotateAllPreviews('image'));
+                document.getElementById('rotateAllBtn').addEventListener('click', () => window.App.rotateAllPreviews('image'));
                 break;
-            case 'image-to-pdf':
-                document.getElementById('imageFilesInput').addEventListener('change', handleImageToPdfPreview);
-                break;
+            case 'image-to-pdf': document.getElementById('imageFilesInput').addEventListener('change', handleImageToPdfPreview); break;
             case 'convert-image':
                 toolState.convertImage = { rotation: 0 };
                 document.getElementById('convertImageInput').addEventListener('change', renderImageConverterPreview);
-                document.getElementById('rotateImageBtn').addEventListener('click', App.rotateConvertImage);
+                document.getElementById('rotateImageBtn').addEventListener('click', window.App.rotateConvertImage);
                 break;
         }
     }
@@ -137,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function renderPagePreview(file, uploadedFileInfo, mode) { // 'mode' pode ser 'split' ou 'image'
+    function renderPagePreview(file, uploadedFileInfo, mode) {
         const previewContainer = document.getElementById('previewContainer');
         const numPages = uploadedFileInfo.numPages;
         previewContainer.innerHTML = `<div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Renderizando ${numPages} páginas...</div>`;
@@ -147,7 +144,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 previewContainer.innerHTML = '';
                 if (mode === 'split') toolState.split = { selections: Array(numPages).fill(false), rotations: Array(numPages).fill(0) };
                 if (mode === 'image') toolState.image = { rotations: Array(numPages).fill(0) };
-                
                 for (let i = 1; i <= numPages; i++) {
                     pdf.getPage(i).then(page => {
                         const canvas = document.createElement('canvas');
@@ -155,13 +151,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         const viewport = page.getViewport({ scale });
                         canvas.height = viewport.height; canvas.width = viewport.width;
                         page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport });
-
                         let optionsHTML = `<p class="mb-1 mt-2 small">Página ${i}</p>`;
                         if (mode === 'split') {
-                            optionsHTML = `<div class="form-check d-flex align-items-center justify-content-center mb-2"><input class="form-check-input mt-0" type="checkbox" id="page-checkbox-${i-1}" onchange="App.togglePageSelection(${i-1})"><label class="form-check-label ms-2 small" for="page-checkbox-${i-1}">Página ${i}</label></div>`;
+                            optionsHTML = `<div class="form-check d-flex align-items-center justify-content-center mb-2"><input class="form-check-input mt-0" type="checkbox" id="page-checkbox-${i-1}" onchange="window.App.togglePageSelection(${i-1})"><label class="form-check-label ms-2 small" for="page-checkbox-${i-1}">Página ${i}</label></div>`;
                         }
-                        
-                        const cardHTML = `<div class="col-xl-2 col-lg-3 col-md-4 col-sm-6"><div class="card h-100"><div class="card-body p-2 d-flex flex-column align-items-center">${optionsHTML}<div id="page-canvas-wrapper-${i-1}" class="my-1" style="transition: transform 0.3s ease;"></div><button class="btn btn-outline-secondary btn-sm" onclick="App.rotatePagePreview(${i-1}, '${mode}')"><i class="fas fa-sync-alt"></i> Girar</button></div></div></div>`;
+                        const cardHTML = `<div class="col-xl-2 col-lg-3 col-md-4 col-sm-6"><div class="card h-100"><div class="card-body p-2 d-flex flex-column align-items-center">${optionsHTML}<div id="page-canvas-wrapper-${i-1}" class="my-1" style="transition: transform 0.3s ease;"></div><button class="btn btn-outline-secondary btn-sm" onclick="window.App.rotatePagePreview(${i-1}, '${mode}')"><i class="fas fa-sync-alt"></i> Girar</button></div></div></div>`;
                         previewContainer.insertAdjacentHTML('beforeend', cardHTML);
                         document.getElementById(`page-canvas-wrapper-${i-1}`).appendChild(canvas);
                     });
@@ -178,9 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
         previewContainer.innerHTML = '';
         if (files.length > 0) {
             let fileListHTML = '<h6>Imagens Selecionadas:</h6><ul class="list-group">';
-            Array.from(files).forEach(file => {
-                fileListHTML += `<li class="list-group-item d-flex align-items-center"><i class="fas fa-file-image me-2 text-info"></i>${file.name}</li>`;
-            });
+            Array.from(files).forEach(file => { fileListHTML += `<li class="list-group-item d-flex align-items-center"><i class="fas fa-file-image me-2 text-info"></i>${file.name}</li>`; });
             fileListHTML += '</ul>';
             previewContainer.innerHTML = fileListHTML;
         } else {
@@ -194,9 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const previewContainer = document.getElementById('imagePreviewContainer');
         const optionsContainer = document.getElementById('convertImageOptions');
         const reader = new FileReader();
-        reader.onload = (e) => {
-            previewContainer.innerHTML = `<img id="imagePreview" src="${e.target.result}" class="img-fluid" style="max-height: 250px; transition: transform 0.3s ease;">`;
-        };
+        reader.onload = (e) => { previewContainer.innerHTML = `<img id="imagePreview" src="${e.target.result}" class="img-fluid" style="max-height: 250px; transition: transform 0.3s ease;">`; };
         reader.readAsDataURL(file);
         const originalFormat = file.type.split('/')[1].toUpperCase().replace('JPEG', 'JPG');
         document.getElementById('originalFormat').textContent = originalFormat;
@@ -237,22 +227,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function processSelectedTool() {
         const formData = new FormData();
-        // Ferramentas sem upload principal
-        if (selectedTool === 'image-to-pdf' || selectedTool === 'convert-image') {
-            const specificInput = document.getElementById(selectedTool === 'image-to-pdf' ? 'imageFilesInput' : 'convertImageInput');
-            if (specificInput.files.length === 0) throw new Error('Nenhum arquivo selecionado.');
-            Array.from(specificInput.files).forEach(file => formData.append('files', file));
-            if (selectedTool === 'convert-image') {
+        switch (selectedTool) {
+            case 'convert-image':
+                const imageInput = document.getElementById('convertImageInput');
+                if (imageInput.files.length === 0) throw new Error('Nenhum arquivo de imagem selecionado.');
+                formData.append('file', imageInput.files[0]);
                 formData.append('target_format', document.getElementById('targetFormatSelect').value);
                 formData.append('rotation', toolState.convertImage.rotation);
-            }
-        } else {
-             // Ferramentas que usam o upload principal
-            formData.append('file', uploadedFile.file);
-        }
-
-        switch (selectedTool) {
+                break;
+            case 'image-to-pdf':
+                const imagesInput = document.getElementById('imageFilesInput');
+                if (imagesInput.files.length === 0) throw new Error('Nenhum arquivo de imagem selecionado.');
+                Array.from(imagesInput.files).forEach(file => { formData.append('files', file); });
+                break;
             case 'split':
+                formData.append('file', uploadedFile.file);
                 const splitMode = document.querySelector('input[name="splitMode"]:checked').value;
                 if ((splitMode === 'individual' || splitMode === 'merge') && toolState.split.selections.every(s => !s)) {
                     throw new Error('Nenhuma página foi selecionada.');
@@ -261,25 +250,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('selections', JSON.stringify(toolState.split.selections));
                 formData.append('rotations', JSON.stringify(toolState.split.rotations));
                 break;
-            case 'compress': formData.append('compression_level', document.getElementById('compressionLevel').value); break;
+            case 'compress':
+                formData.append('file', uploadedFile.file);
+                formData.append('compression_level', document.getElementById('compressionLevel').value);
+                break;
             case 'protect':
+                formData.append('file', uploadedFile.file);
                 const password = document.getElementById('protectPassword').value;
                 if (!password) throw new Error('A senha não pode estar vazia.');
                 if (password !== document.getElementById('confirmPassword').value) throw new Error('As senhas não coincidem.');
                 formData.append('password', password);
                 break;
-            case 'unlock': formData.append('password', document.getElementById('unlockPassword').value); break;
+            case 'unlock':
+                formData.append('file', uploadedFile.file);
+                formData.append('password', document.getElementById('unlockPassword').value);
+                break;
             case 'pdf-to-image':
+                formData.append('file', uploadedFile.file);
                 formData.append('image_format', document.getElementById('imageFormat').value);
                 formData.append('rotations', JSON.stringify(toolState.image.rotations));
                 break;
+            default:
+                formData.append('file', uploadedFile.file);
+                break;
         }
-        
-        return fetch(`/api/${selectedTool}/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': csrftoken },
-            body: formData
-        }).then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.message || 'Erro desconhecido') }));
+        return fetch(`/api/${selectedTool}/`, { method: 'POST', headers: { 'X-CSRFToken': csrftoken }, body: formData })
+            .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.message || 'Erro desconhecido') }));
     }
 
     function showResults(result) {
@@ -295,37 +291,38 @@ document.addEventListener('DOMContentLoaded', function() {
         modalBody.innerHTML = content;
         modal.show();
     }
-});
 
-window.App = {
-    rotatePagePreview: function(pageIndex, mode) {
-        const state = toolState[mode];
-        if (!state || !state.rotations) return;
-        state.rotations[pageIndex] = (state.rotations[pageIndex] + 90) % 360;
-        const wrapper = document.getElementById(`page-canvas-wrapper-${pageIndex}`);
-        if (wrapper) wrapper.style.transform = `rotate(${state.rotations[pageIndex]}deg)`;
-    },
-    togglePageSelection: function(pageIndex) {
-        toolState.split.selections[pageIndex] = !toolState.split.selections[pageIndex];
-        document.getElementById('selectAllPages').checked = toolState.split.selections.every(s => s);
-    },
-    toggleAllSelections: function(isChecked) {
-        toolState.split.selections.fill(isChecked);
-        for (let i = 0; i < toolState.split.selections.length; i++) {
-            const checkbox = document.getElementById(`page-checkbox-${i}`);
-            if (checkbox) checkbox.checked = isChecked;
+    // O objeto 'App' agora está dentro do DOMContentLoaded para ter acesso a 'toolState'
+    window.App = {
+        rotatePagePreview: function(pageIndex, mode) {
+            const state = toolState[mode];
+            if (!state || !state.rotations) return;
+            state.rotations[pageIndex] = (state.rotations[pageIndex] + 90) % 360;
+            const wrapper = document.getElementById(`page-canvas-wrapper-${pageIndex}`);
+            if (wrapper) wrapper.style.transform = `rotate(${state.rotations[pageIndex]}deg)`;
+        },
+        togglePageSelection: function(pageIndex) {
+            toolState.split.selections[pageIndex] = !toolState.split.selections[pageIndex];
+            document.getElementById('selectAllPages').checked = toolState.split.selections.every(s => s);
+        },
+        toggleAllSelections: function(isChecked) {
+            toolState.split.selections.fill(isChecked);
+            for (let i = 0; i < toolState.split.selections.length; i++) {
+                const checkbox = document.getElementById(`page-checkbox-${i}`);
+                if (checkbox) checkbox.checked = isChecked;
+            }
+        },
+        rotateAllPreviews: function(mode) {
+            const state = toolState[mode];
+            if (!state || !state.rotations) return;
+            for (let i = 0; i < state.rotations.length; i++) {
+                this.rotatePagePreview(i, mode);
+            }
+        },
+        rotateConvertImage: function() {
+            toolState.convertImage.rotation = (toolState.convertImage.rotation + 90) % 360;
+            const img = document.getElementById('imagePreview');
+            if (img) img.style.transform = `rotate(${toolState.convertImage.rotation}deg)`;
         }
-    },
-    rotateAllPreviews: function(mode) {
-        const state = toolState[mode];
-        if (!state || !state.rotations) return;
-        for (let i = 0; i < state.rotations.length; i++) {
-            this.rotatePagePreview(i, mode);
-        }
-    },
-    rotateConvertImage: function() {
-        toolState.convertImage.rotation = (toolState.convertImage.rotation + 90) % 360;
-        const img = document.getElementById('imagePreview');
-        if (img) img.style.transform = `rotate(${toolState.convertImage.rotation}deg)`;
-    }
-};
+    };
+});
