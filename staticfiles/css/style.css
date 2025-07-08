@@ -1,44 +1,62 @@
+/* static/css/style.css (VERSÃO FINAL COM TODAS AS CORREÇÕES DE ESTILO) */
+
 :root {
-    --bg-color: #f4f4f4;
-    --text-color: #222;
+    --bs-primary: #0d6efd;
+    --bg-color: #f8f9fa;
+    --text-color: #212529;
     --card-bg-color: #ffffff;
     --card-border-color: #dee2e6;
-    --navbar-bg-color: #2D2D34;
-    --navbar-text-color: #E0E0E0;
+    --navbar-bg-color: #212529; /* Cor preta/cinza escuro para a navbar */
+    --navbar-text-color: rgba(255, 255, 255, 0.75);
     --navbar-text-hover-color: #FFFFFF;
-    --primary-color: #0d6efd;
-    --footer-bg-color: #35424a;
+    --footer-bg-color: #343a40;
     --footer-text-color: #ffffff;
 }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    margin: 0;
-    padding: 0;
     background-color: var(--bg-color);
     color: var(--text-color);
 }
 
-.card, .bg-light, .bg-white {
+/* --- CORREÇÃO DEFINITIVA DA NAVBAR --- */
+.navbar-custom {
+    background-color: var(--navbar-bg-color) !important;
+}
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
+    color: var(--navbar-text-color) !important;
+}
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-link.active {
+    color: var(--navbar-text-hover-color) !important;
+}
+.navbar-custom .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+.navbar-custom .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* --- CORREÇÃO PARA INPUTS SELECIONADOS --- */
+.form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+/* Estilos gerais */
+.card, .bg-light {
     background-color: var(--card-bg-color) !important;
-    color: var(--text-color) !important;
     border-color: var(--card-border-color) !important;
 }
-
-.form-control, input, textarea, select {
-    background-color: var(--card-bg-color) !important;
-    color: var(--text-color) !important;
-    border-color: var(--card-border-color) !important;
+.form-control, input, select {
+    background-color: var(--card-bg-color);
+    color: var(--text-color);
+    border-color: var(--card-border-color);
 }
-
-.form-control:focus, input:focus, textarea:focus, select:focus {
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-}
-
 footer {
     background: var(--footer-bg-color);
     color: var(--footer-text-color);
     text-align: center;
-    padding: 10px 0;
+    padding: 20px 0;
 }

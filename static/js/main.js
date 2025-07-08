@@ -1,5 +1,5 @@
 // =========================================================================
-// static/js/main.js (VERSÃO FINAL, COMPLETA E CORRIGIDA)
+// static/js/main.js (VERSÃO FINAL, COMPLETA E COM TODAS AS FERRAMENTAS)
 // =========================================================================
 
 function getCookie(name) {
@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let uploadedFile = null;
     let toolState = {
         split: { selections: [], rotations: [] },
+        image: { rotations: [] }, // Restaurado para pdf-to-image
+        convertImage: { rotation: 0 } // Restaurado para convert-image
     };
 
     const uploadForm = document.getElementById('uploadForm');
@@ -33,12 +35,11 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadForm.addEventListener('submit', function(e) {
             e.preventDefault();
             if (!fileInput.files.length) return alert('Por favor, selecione um arquivo PDF.');
-            
             const formData = new FormData(this);
             const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnHTML = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validando...';
             submitBtn.disabled = true;
-            
             fetch('/api/upload/', { method: 'POST', body: formData, headers: { 'X-CSRFToken': csrftoken } })
             .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.message || 'Erro no servidor') }))
             .then(data => {
@@ -46,11 +47,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     uploadedFile = { name: data.filename, numPages: data.num_pages, file: fileInput.files[0] };
                     submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Arquivo Carregado!';
                     submitBtn.classList.replace('btn-primary', 'btn-success');
-                    
                     const alertEl = document.createElement('div');
                     alertEl.className = 'alert alert-success mt-3';
                     alertEl.innerHTML = `<i class="fas fa-check-circle me-2"></i>Arquivo <strong>${data.filename}</strong> (${data.num_pages || 'N/A'} páginas) pronto! Escolha uma ferramenta.`;
-                    
                     const existingAlert = uploadForm.querySelector('.alert');
                     if (existingAlert) existingAlert.remove();
                     uploadForm.appendChild(alertEl);
@@ -78,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         selectedTool = tool;
 
-        // CORREÇÃO 1: Adicionado o atributo 'for' nas labels para que o clique funcione.
+        // --- LÓGICA COMPLETA DE TODAS AS FERRAMENTAS RESTAURADA ---
         const toolConfigs = {
             'split': { title: 'Dividir PDF', body: `<div class="row border-bottom pb-3 mb-3"><div class="col-md-7"><h6>Modo de Divisão</h6><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitIndividual" value="individual" checked><label class="form-check-label" for="splitIndividual">Extrair páginas selecionadas (.zip)</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitMerge" value="merge"><label class="form-check-label" for="splitMerge">Unir páginas selecionadas</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitPairs" value="pairs"><label class="form-check-label" for="splitPairs">Dividir em pares</label></div></div><div class="col-md-5 d-flex align-items-center justify-content-end" id="splitPageControls"><div class="form-check me-3"><input class="form-check-input" type="checkbox" id="selectAllPages"><label class="form-check-label" for="selectAllPages">Selecionar Todas</label></div><button class="btn btn-secondary" id="rotateAllBtn"><i class="fas fa-sync-alt me-2"></i>Girar Todas</button></div></div><div id="previewContainer" class="row g-3 text-center"><div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div></div>` },
             'compress': { title: 'Comprimir PDF', body: `<div class="mb-3"><label for="compressionLevel" class="form-label">Nível de Compressão:</label><select id="compressionLevel" class="form-select"><option value="low">Baixa (Melhor Qualidade)</option><option value="medium" selected>Média (Equilibrado)</option><option value="high">Alta (Menor Tamanho)</option></select></div>` },
@@ -86,7 +85,9 @@ document.addEventListener('DOMContentLoaded', function() {
             'unlock': { title: 'Remover Senha', body: `<div class="mb-3"><label for="unlockPassword" class="form-label">Digite a senha atual:</label><input type="password" id="unlockPassword" class="form-control" required></div>` },
             'pdf-to-word': { title: 'PDF para Word', body: `<p>O arquivo carregado (<strong>${uploadedFile?.name || 'PDF'}</strong>) será convertido. Clique em processar.</p>` },
             'pdf-to-excel': { title: 'PDF para Excel', body: `<p>O arquivo carregado (<strong>${uploadedFile?.name || 'PDF'}</strong>) será convertido. Clique em processar.</p>` },
-            'pdf-to-image': { title: 'PDF para Imagens', body: `<p>O arquivo carregado (<strong>${uploadedFile?.name || 'PDF'}</strong>) será convertido. Clique em processar.</p>` },
+            'pdf-to-image': { title: 'Converter PDF para Imagens', body: `<div class="d-flex justify-content-between align-items-center mb-3"><div><label class="form-label mb-0 me-2" for="imageFormat">Formato:</label><select class="form-select-sm" id="imageFormat"><option value="jpg">JPG</option><option value="png" selected>PNG</option></select></div><button class="btn btn-secondary" id="rotateAllBtn"><i class="fas fa-sync-alt me-2"></i>Girar Todas</button></div><div id="previewContainer" class="row g-3 text-center"><div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div></div>` },
+            'image-to-pdf': { title: 'Imagens para PDF', body: `<div class="mb-3"><label for="imageFilesInput" class="form-label">Selecione uma ou mais imagens:</label><input type="file" id="imageFilesInput" class="form-control" multiple accept="image/*"></div><div id="imageListPreview" class="mt-3"><p class="text-muted">Nenhuma imagem selecionada.</p></div>` },
+            'convert-image': { title: 'Converter Formato de Imagem', body: `<div class="row"><div class="col-md-7"><div class="mb-3"><label for="convertImageInput" class="form-label">Selecione uma imagem:</label><input type="file" id="convertImageInput" class="form-control" accept="image/*"></div><div id="convertImageOptions" class="d-none"><div class="mb-3"><label class="form-label">Converter de <strong id="originalFormat"></strong> para:</label><select id="targetFormatSelect" class="form-select"></select></div><button class="btn btn-secondary" id="rotateImageBtn"><i class="fas fa-sync-alt"></i> Girar Imagem</button></div></div><div class="col-md-5 d-flex align-items-center justify-content-center"><div id="imagePreviewContainer" class="text-center"><p class="text-muted">Pré-visualização</p></div></div></div>` }
         };
         
         const modalEl = document.getElementById('toolModal');
@@ -97,28 +98,38 @@ document.addEventListener('DOMContentLoaded', function() {
         modalBody.innerHTML = config.body;
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
 
-        if (tool === 'split') {
-            toolState.split = { selections: [], rotations: [] };
-            renderPagePreview(uploadedFile.file, uploadedFile);
-            document.querySelectorAll('input[name="splitMode"]').forEach(radio => radio.addEventListener('change', handleSplitModeChange));
-            document.getElementById('selectAllPages').addEventListener('change', (e) => App.toggleAllSelections(e.target.checked));
-            document.getElementById('rotateAllBtn').addEventListener('click', () => App.rotateAllPreviews());
-            handleSplitModeChange();
+        // Adiciona listeners específicos após o HTML do modal ser criado
+        switch (tool) {
+            case 'split':
+                toolState.split = { selections: [], rotations: [] };
+                renderPagePreview(uploadedFile.file, uploadedFile, 'split');
+                document.querySelectorAll('input[name="splitMode"]').forEach(radio => radio.addEventListener('change', handleSplitModeChange));
+                document.getElementById('selectAllPages').addEventListener('change', (e) => App.toggleAllSelections(e.target.checked));
+                document.getElementById('rotateAllBtn').addEventListener('click', () => App.rotateAllPreviews('split'));
+                handleSplitModeChange();
+                break;
+            case 'pdf-to-image':
+                toolState.image = { rotations: [] };
+                renderPagePreview(uploadedFile.file, uploadedFile, 'image');
+                document.getElementById('rotateAllBtn').addEventListener('click', () => App.rotateAllPreviews('image'));
+                break;
+            case 'image-to-pdf':
+                document.getElementById('imageFilesInput').addEventListener('change', handleImageToPdfPreview);
+                break;
+            case 'convert-image':
+                toolState.convertImage = { rotation: 0 };
+                document.getElementById('convertImageInput').addEventListener('change', renderImageConverterPreview);
+                document.getElementById('rotateImageBtn').addEventListener('click', App.rotateConvertImage);
+                break;
         }
     }
 
-    // CORREÇÃO 2: Lógica ajustada para esconder apenas os controles de seleção, não a pré-visualização inteira.
     function handleSplitModeChange() {
         const selectedMode = document.querySelector('input[name="splitMode"]:checked').value;
         const pageControls = document.getElementById('splitPageControls');
         const previewContainer = document.getElementById('previewContainer');
-        
         const showSelectionUI = selectedMode === 'individual' || selectedMode === 'merge';
-        
-        if (pageControls) {
-            pageControls.style.display = showSelectionUI ? 'flex' : 'none';
-        }
-        
+        if (pageControls) pageControls.style.display = showSelectionUI ? 'flex' : 'none';
         if (previewContainer) {
             previewContainer.querySelectorAll('.card .form-check').forEach(el => {
                 el.style.display = showSelectionUI ? 'flex' : 'none';
@@ -126,36 +137,81 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function renderPagePreview(file, uploadedFileInfo) {
+    function renderPagePreview(file, uploadedFileInfo, mode) { // 'mode' pode ser 'split' ou 'image'
         const previewContainer = document.getElementById('previewContainer');
         const numPages = uploadedFileInfo.numPages;
         previewContainer.innerHTML = `<div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Renderizando ${numPages} páginas...</div>`;
-
         const fileReader = new FileReader();
         fileReader.onload = (e) => {
             pdfjsLib.getDocument({ data: e.target.result }).promise.then(pdf => {
                 previewContainer.innerHTML = '';
-                toolState.split = { selections: Array(numPages).fill(false), rotations: Array(numPages).fill(0) };
+                if (mode === 'split') toolState.split = { selections: Array(numPages).fill(false), rotations: Array(numPages).fill(0) };
+                if (mode === 'image') toolState.image = { rotations: Array(numPages).fill(0) };
                 
                 for (let i = 1; i <= numPages; i++) {
                     pdf.getPage(i).then(page => {
                         const canvas = document.createElement('canvas');
                         const scale = 0.3;
                         const viewport = page.getViewport({ scale });
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
+                        canvas.height = viewport.height; canvas.width = viewport.width;
                         page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport });
 
-                        const cardHTML = `<div class="col-xl-2 col-lg-3 col-md-4 col-sm-6"><div class="card h-100"><div class="card-body p-2 d-flex flex-column align-items-center"><div class="form-check d-flex align-items-center justify-content-center mb-2"><input class="form-check-input mt-0" type="checkbox" id="page-checkbox-${i-1}" onchange="App.togglePageSelection(${i-1})"><label class="form-check-label ms-2 small" for="page-checkbox-${i-1}">Página ${i}</label></div><div id="page-canvas-wrapper-${i-1}" class="my-1" style="transition: transform 0.3s ease;"></div><button class="btn btn-outline-secondary btn-sm" onclick="App.rotatePagePreview(${i-1})"><i class="fas fa-sync-alt"></i> Girar</button></div></div></div>`;
+                        let optionsHTML = `<p class="mb-1 mt-2 small">Página ${i}</p>`;
+                        if (mode === 'split') {
+                            optionsHTML = `<div class="form-check d-flex align-items-center justify-content-center mb-2"><input class="form-check-input mt-0" type="checkbox" id="page-checkbox-${i-1}" onchange="App.togglePageSelection(${i-1})"><label class="form-check-label ms-2 small" for="page-checkbox-${i-1}">Página ${i}</label></div>`;
+                        }
+                        
+                        const cardHTML = `<div class="col-xl-2 col-lg-3 col-md-4 col-sm-6"><div class="card h-100"><div class="card-body p-2 d-flex flex-column align-items-center">${optionsHTML}<div id="page-canvas-wrapper-${i-1}" class="my-1" style="transition: transform 0.3s ease;"></div><button class="btn btn-outline-secondary btn-sm" onclick="App.rotatePagePreview(${i-1}, '${mode}')"><i class="fas fa-sync-alt"></i> Girar</button></div></div></div>`;
                         previewContainer.insertAdjacentHTML('beforeend', cardHTML);
                         document.getElementById(`page-canvas-wrapper-${i-1}`).appendChild(canvas);
                     });
                 }
-                // Chama a função após renderizar para garantir que o estado inicial da UI esteja correto.
-                setTimeout(handleSplitModeChange, 100); 
+                if (mode === 'split') setTimeout(handleSplitModeChange, 100);
             });
         };
         fileReader.readAsArrayBuffer(file);
+    }
+    
+    function handleImageToPdfPreview(event) {
+        const files = event.target.files;
+        const previewContainer = document.getElementById('imageListPreview');
+        previewContainer.innerHTML = '';
+        if (files.length > 0) {
+            let fileListHTML = '<h6>Imagens Selecionadas:</h6><ul class="list-group">';
+            Array.from(files).forEach(file => {
+                fileListHTML += `<li class="list-group-item d-flex align-items-center"><i class="fas fa-file-image me-2 text-info"></i>${file.name}</li>`;
+            });
+            fileListHTML += '</ul>';
+            previewContainer.innerHTML = fileListHTML;
+        } else {
+            previewContainer.innerHTML = '<p class="text-muted">Nenhuma imagem selecionada.</p>';
+        }
+    }
+    
+    function renderImageConverterPreview(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        const optionsContainer = document.getElementById('convertImageOptions');
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewContainer.innerHTML = `<img id="imagePreview" src="${e.target.result}" class="img-fluid" style="max-height: 250px; transition: transform 0.3s ease;">`;
+        };
+        reader.readAsDataURL(file);
+        const originalFormat = file.type.split('/')[1].toUpperCase().replace('JPEG', 'JPG');
+        document.getElementById('originalFormat').textContent = originalFormat;
+        const availableFormats = ['PNG', 'JPG', 'WEBP', 'BMP', 'TIFF'];
+        const targetSelect = document.getElementById('targetFormatSelect');
+        targetSelect.innerHTML = '';
+        availableFormats.forEach(format => {
+            if (format !== originalFormat) {
+                const option = document.createElement('option');
+                option.value = format.toLowerCase();
+                option.textContent = format;
+                targetSelect.appendChild(option);
+            }
+        });
+        optionsContainer.classList.remove('d-none');
     }
 
     const processButton = document.getElementById('processTool');
@@ -164,7 +220,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const button = this;
             button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
             button.disabled = true;
-
             processSelectedTool()
                 .then(result => {
                     if (result.success) {
@@ -182,7 +237,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function processSelectedTool() {
         const formData = new FormData();
-        formData.append('file', uploadedFile.file);
+        // Ferramentas sem upload principal
+        if (selectedTool === 'image-to-pdf' || selectedTool === 'convert-image') {
+            const specificInput = document.getElementById(selectedTool === 'image-to-pdf' ? 'imageFilesInput' : 'convertImageInput');
+            if (specificInput.files.length === 0) throw new Error('Nenhum arquivo selecionado.');
+            Array.from(specificInput.files).forEach(file => formData.append('files', file));
+            if (selectedTool === 'convert-image') {
+                formData.append('target_format', document.getElementById('targetFormatSelect').value);
+                formData.append('rotation', toolState.convertImage.rotation);
+            }
+        } else {
+             // Ferramentas que usam o upload principal
+            formData.append('file', uploadedFile.file);
+        }
 
         switch (selectedTool) {
             case 'split':
@@ -194,20 +261,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('selections', JSON.stringify(toolState.split.selections));
                 formData.append('rotations', JSON.stringify(toolState.split.rotations));
                 break;
-            case 'compress':
-                formData.append('compression_level', document.getElementById('compressionLevel').value);
-                break;
+            case 'compress': formData.append('compression_level', document.getElementById('compressionLevel').value); break;
             case 'protect':
                 const password = document.getElementById('protectPassword').value;
-                const confirm = document.getElementById('confirmPassword').value;
-                if (!password) throw new Error('O campo de senha não pode estar vazio.');
-                if (password !== confirm) throw new Error('As senhas não coincidem.');
+                if (!password) throw new Error('A senha não pode estar vazia.');
+                if (password !== document.getElementById('confirmPassword').value) throw new Error('As senhas não coincidem.');
                 formData.append('password', password);
                 break;
-            case 'unlock':
-                const unlockPassword = document.getElementById('unlockPassword').value;
-                if (!unlockPassword) throw new Error('Por favor, digite a senha atual do PDF.');
-                formData.append('password', unlockPassword);
+            case 'unlock': formData.append('password', document.getElementById('unlockPassword').value); break;
+            case 'pdf-to-image':
+                formData.append('image_format', document.getElementById('imageFormat').value);
+                formData.append('rotations', JSON.stringify(toolState.image.rotations));
                 break;
         }
         
@@ -234,10 +298,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 window.App = {
-    rotatePagePreview: function(pageIndex) {
-        toolState.split.rotations[pageIndex] = (toolState.split.rotations[pageIndex] + 90) % 360;
+    rotatePagePreview: function(pageIndex, mode) {
+        const state = toolState[mode];
+        if (!state || !state.rotations) return;
+        state.rotations[pageIndex] = (state.rotations[pageIndex] + 90) % 360;
         const wrapper = document.getElementById(`page-canvas-wrapper-${pageIndex}`);
-        if (wrapper) wrapper.style.transform = `rotate(${toolState.split.rotations[pageIndex]}deg)`;
+        if (wrapper) wrapper.style.transform = `rotate(${state.rotations[pageIndex]}deg)`;
     },
     togglePageSelection: function(pageIndex) {
         toolState.split.selections[pageIndex] = !toolState.split.selections[pageIndex];
@@ -250,9 +316,16 @@ window.App = {
             if (checkbox) checkbox.checked = isChecked;
         }
     },
-    rotateAllPreviews: function() {
-        for (let i = 0; i < toolState.split.rotations.length; i++) {
-            this.rotatePagePreview(i);
+    rotateAllPreviews: function(mode) {
+        const state = toolState[mode];
+        if (!state || !state.rotations) return;
+        for (let i = 0; i < state.rotations.length; i++) {
+            this.rotatePagePreview(i, mode);
         }
+    },
+    rotateConvertImage: function() {
+        toolState.convertImage.rotation = (toolState.convertImage.rotation + 90) % 360;
+        const img = document.getElementById('imagePreview');
+        if (img) img.style.transform = `rotate(${toolState.convertImage.rotation}deg)`;
     }
 };
