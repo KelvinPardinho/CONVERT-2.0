@@ -2,27 +2,29 @@ from django.shortcuts import render, get_object_or_404
 from .models import Post, Category
 
 def blog_index(request):
-    # Busca todos os posts publicados, ordenados do mais recente para o mais antigo
+    # SUA LÓGICA ORIGINAL RESTAURADA, POIS ELA ESTAVA CORRETA
     all_posts = Post.objects.filter(is_published=True).order_by('-created_at')
-    
-    # Tenta encontrar um post em destaque
     featured_post = all_posts.filter(is_featured=True).first()
     
-    # Busca todas as categorias
+    if featured_post:
+        # Pega os 6 posts mais recentes, excluindo o que já está em destaque
+        recent_posts = all_posts.exclude(pk=featured_post.pk)[:6]
+    else:
+        # Se não há destaque, pega os 6 mais recentes da lista completa
+        recent_posts = all_posts[:6]
+
     categories = Category.objects.all()
 
     context = {
         'featured_post': featured_post,
-        # CORREÇÃO: Passa a lista COMPLETA de todos os posts para o template.
-        # O template decidirá se mostra o título "Outros Artigos" ou "Todos os Artigos".
-        'all_posts': all_posts, 
+        'recent_posts': recent_posts, # Voltamos a usar 'recent_posts'
         'categories': categories,
     }
     
     return render(request, 'blog/index.html', context)
 
+# A view para a página de detalhes
 def detalhe_artigo(request, slug):
-    # Esta view já está correta, mas a incluímos para garantir
     post = get_object_or_404(Post, slug=slug, is_published=True)
     context = {
         'post': post
