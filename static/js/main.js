@@ -1,5 +1,5 @@
 // =========================================================================
-// static/js/main.js (VERSÃO FINAL GARANTIDA COM TODAS AS CORREÇÕES)
+// static/js/main.js (VERSÃO FINAL GARANTIDA COM TODAS AS FERRAMENTAS E CORREÇÕES)
 // =========================================================================
 
 function getCookie(name) {
@@ -22,12 +22,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const csrftoken = getCookie('csrftoken');
     let selectedTool = null;
     let uploadedFile = null;
-    
-    // Variável de estado acessível por todas as funções dentro deste escopo
     let toolState = {
         split: { selections: [], rotations: [] },
         image: { rotations: [] },
-        convertImage: { rotation: 0 }
+        convertImage: { rotation: 0 },
+        merge: { files: [], rotations: {} }
     };
 
     const uploadForm = document.getElementById('uploadForm');
@@ -79,6 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedTool = tool;
 
         const toolConfigs = {
+            'merge': { title: 'Unir PDFs', body: `<div class="mb-3"><label for="mergeFilesInput" class="form-label">Selecione dois ou mais arquivos PDF:</label><input type="file" id="mergeFilesInput" class="form-control" multiple accept=".pdf"></div><div id="previewContainer" class="row g-3"><p class="text-muted text-center">Nenhum arquivo selecionado.</p></div>` },
             'split': { title: 'Dividir PDF', body: `<div class="row border-bottom pb-3 mb-3"><div class="col-md-7"><h6>Modo de Divisão</h6><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitIndividual" value="individual" checked><label class="form-check-label" for="splitIndividual">Extrair páginas selecionadas (.zip)</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitMerge" value="merge"><label class="form-check-label" for="splitMerge">Unir páginas selecionadas</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitPairs" value="pairs"><label class="form-check-label" for="splitPairs">Dividir em pares</label></div></div><div class="col-md-5 d-flex align-items-center justify-content-end" id="splitPageControls"><div class="form-check me-3"><input class="form-check-input" type="checkbox" id="selectAllPages"><label class="form-check-label" for="selectAllPages">Selecionar Todas</label></div><button class="btn btn-secondary" id="rotateAllBtn"><i class="fas fa-sync-alt me-2"></i>Girar Todas</button></div></div><div id="previewContainer" class="row g-3 text-center"><div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div></div>` },
             'compress': { title: 'Comprimir PDF', body: `<div class="mb-3"><label for="compressionLevel" class="form-label">Nível de Compressão:</label><select id="compressionLevel" class="form-select"><option value="low">Baixa (Melhor Qualidade)</option><option value="medium" selected>Média (Equilibrado)</option><option value="high">Alta (Menor Tamanho)</option></select></div>` },
             'protect': { title: 'Proteger PDF', body: `<div class="mb-3"><label for="protectPassword" class="form-label">Defina uma senha:</label><input type="password" id="protectPassword" class="form-control" required></div><div class="mb-3"><label for="confirmPassword" class="form-label">Confirme a senha:</label><input type="password" id="confirmPassword" class="form-control" required></div>` },
@@ -99,6 +99,10 @@ document.addEventListener('DOMContentLoaded', function() {
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
 
         switch (tool) {
+            case 'merge':
+                toolState.merge = { files: [], rotations: {} };
+                document.getElementById('mergeFilesInput').addEventListener('change', window.App.renderMergePreview);
+                break;
             case 'split':
                 toolState.split = { selections: [], rotations: [] };
                 renderPagePreview(uploadedFile.file, uploadedFile, 'split');
@@ -210,24 +214,36 @@ document.addEventListener('DOMContentLoaded', function() {
             const button = this;
             button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
             button.disabled = true;
-            processSelectedTool()
-                .then(result => {
-                    if (result.success) {
-                        bootstrap.Modal.getInstance(document.getElementById('toolModal')).hide();
-                        showResults(result);
-                    } else { throw new Error(result.message || 'Ocorreu um erro no servidor.'); }
-                })
-                .catch(error => alert(`Erro: ${error.message}`))
-                .finally(() => {
-                    button.innerHTML = 'Processar';
-                    button.disabled = false;
-                });
+            try {
+                processSelectedTool()
+                    .then(result => {
+                        if (result.success) {
+                            bootstrap.Modal.getInstance(document.getElementById('toolModal')).hide();
+                            showResults(result);
+                        } else { throw new Error(result.message || 'Ocorreu um erro no servidor.'); }
+                    })
+                    .catch(error => { alert(`Erro na comunicação com o servidor: ${error.message}`); })
+                    .finally(() => {
+                        button.innerHTML = 'Processar';
+                        button.disabled = false;
+                    });
+            } catch (error) {
+                alert(`Erro: ${error.message}`);
+                button.innerHTML = 'Processar';
+                button.disabled = false;
+            }
         });
     }
 
     async function processSelectedTool() {
         const formData = new FormData();
         switch (selectedTool) {
+            case 'merge':
+                const mergeInput = document.getElementById('mergeFilesInput');
+                if (mergeInput.files.length < 2) throw new Error('Selecione pelo menos 2 arquivos para unir.');
+                Array.from(mergeInput.files).forEach(file => formData.append('files', file));
+                formData.append('rotations', JSON.stringify(toolState.merge.rotations));
+                break;
             case 'convert-image':
                 const imageInput = document.getElementById('convertImageInput');
                 if (imageInput.files.length === 0) throw new Error('Nenhum arquivo de imagem selecionado.');
@@ -243,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'split':
                 formData.append('file', uploadedFile.file);
                 const splitMode = document.querySelector('input[name="splitMode"]:checked').value;
-                if ((splitMode === 'individual' || splitMode === 'merge') && toolState.split.selections.every(s => !s)) {
+                if ((splitMode === 'individual' || splitMode === 'merge') && !toolState.split.selections.includes(true)) {
                     throw new Error('Nenhuma página foi selecionada.');
                 }
                 formData.append('split_mode', splitMode);
@@ -275,7 +291,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
         }
         return fetch(`/api/${selectedTool}/`, { method: 'POST', headers: { 'X-CSRFToken': csrftoken }, body: formData })
-            .then(response => response.ok ? response.json() : response.json().then(err => { throw new Error(err.message || 'Erro desconhecido') }));
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().catch(() => {
+                        throw new Error(`Erro no servidor: ${response.status} ${response.statusText}`)
+                    }).then(err => { throw new Error(err.message || `Erro ${response.status}`) });
+                }
+                return response.json();
+            });
     }
 
     function showResults(result) {
@@ -292,8 +315,43 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.show();
     }
 
-    // O objeto 'App' agora está dentro do DOMContentLoaded para ter acesso a 'toolState'
     window.App = {
+        renderMergePreview: function(event) {
+            const files = event.target.files;
+            const previewContainer = document.getElementById('previewContainer');
+            previewContainer.innerHTML = '';
+            toolState.merge = { files: Array.from(files), rotations: {} };
+            if (files.length === 0) {
+                previewContainer.innerHTML = '<p class="text-muted text-center">Nenhum arquivo selecionado.</p>';
+                return;
+            }
+            toolState.merge.files.forEach((file, index) => {
+                toolState.merge.rotations[index] = 0;
+                const fileReader = new FileReader();
+                fileReader.onload = (e) => {
+                    pdfjsLib.getDocument({ data: e.target.result }).promise.then(pdf => {
+                        pdf.getPage(1).then(page => {
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+                            const scale = 0.3;
+                            const viewport = page.getViewport({ scale });
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            page.render({ canvasContext: context, viewport: viewport });
+                            const cardHTML = `<div class="col-md-4 col-sm-6"><div class="card h-100"><div class="card-body p-2 d-flex flex-column align-items-center"><p class="mb-1 mt-2 small text-truncate w-100 px-2" title="${file.name}">${file.name}</p><div id="merge-canvas-wrapper-${index}" class="my-2" style="transition: transform 0.3s ease;"></div><button class="btn btn-outline-secondary btn-sm" onclick="window.App.rotateMergeFile(${index})"><i class="fas fa-sync-alt"></i> Girar Arquivo</button></div></div></div>`;
+                            previewContainer.insertAdjacentHTML('beforeend', cardHTML);
+                            document.getElementById(`merge-canvas-wrapper-${index}`).appendChild(canvas);
+                        });
+                    });
+                };
+                fileReader.readAsArrayBuffer(file);
+            });
+        },
+        rotateMergeFile: function(fileIndex) {
+            toolState.merge.rotations[fileIndex] = (toolState.merge.rotations[fileIndex] + 90) % 360;
+            const wrapper = document.getElementById(`merge-canvas-wrapper-${fileIndex}`);
+            if (wrapper) wrapper.style.transform = `rotate(${toolState.merge.rotations[fileIndex]}deg)`;
+        },
         rotatePagePreview: function(pageIndex, mode) {
             const state = toolState[mode];
             if (!state || !state.rotations) return;

@@ -118,50 +118,47 @@ def merge_pdf(request):
     if not success: return JsonResponse({'success': False, 'message': message}, status=500)
     return JsonResponse({'success': True, 'message': message, 'download_url': reverse('converter:download_converted', args=[output_filename])})
 
-# =========================================================================
-# VIEW CORRIGIDA
-# =========================================================================
 def split_pdf(request):
     clean_old_converted_files()
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
 
-    pdf_file = request.FILES.get('file')
-    if not pdf_file:
-        return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
-        
-    try:
+    try: # Adiciona um bloco try...except para capturar todos os erros
+        pdf_file = request.FILES.get('file')
+        if not pdf_file:
+            return JsonResponse({'success': False, 'message': 'Nenhum arquivo enviado.'}, status=400)
+            
         split_mode = request.POST.get('split_mode', 'individual')
         selections = json.loads(request.POST.get('selections', '[]'))
         rotations = json.loads(request.POST.get('rotations', '[]'))
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'message': 'Dados de formulário inválidos.'}, status=400)
 
-    base_filename = os.path.splitext(pdf_file.name)[0]
+        base_filename = os.path.splitext(pdf_file.name)[0]
 
-    # <<< A CORREÇÃO ESTÁ AQUI >>>
-    # Agora passamos `pdf_file.read()` para a função de serviço, que espera bytes.
-    success, message, output_filename, _ = process_split_pdf(
-        pdf_file_bytes=pdf_file.read(), # Alterado aqui
-        split_mode=split_mode,
-        selections=selections,
-        rotations=rotations,
-        output_dir=get_converted_dir(),
-        base_filename=base_filename
-    )
+        # Sua função de serviço `process_split_pdf` espera bytes, então `.read()` está correto.
+        success, message, output_filename, _ = process_split_pdf(
+            pdf_file_bytes=pdf_file.read(),
+            split_mode=split_mode,
+            selections=selections,
+            rotations=rotations,
+            output_dir=get_converted_dir(),
+            base_filename=base_filename
+        )
 
-    if not success:
-        return JsonResponse({'success': False, 'message': message}, status=500)
+        if not success:
+            return JsonResponse({'success': False, 'message': message}, status=400) # Retorna erro como JSON
 
-    response_data = {'success': True, 'message': message}
-    download_url = reverse('converter:download_converted', args=[output_filename])
-    if '.zip' in output_filename:
-        response_data['download_zip'] = download_url
-    else:
-        response_data['download_url'] = download_url
+        response_data = {'success': True, 'message': message}
+        download_url = reverse('converter:download_converted', args=[output_filename])
+        if '.zip' in output_filename:
+            response_data['download_zip'] = download_url
+        else:
+            response_data['download_url'] = download_url
+            
+        return JsonResponse(response_data)
         
-    return JsonResponse(response_data)
-# =========================================================================
+    except Exception as e:
+        # Captura qualquer exceção inesperada (como o TypeError) e retorna um JSON de erro
+        return JsonResponse({'success': False, 'message': f'Ocorreu um erro interno no servidor: {str(e)}'}, status=500)
 
 def compress_pdf(request):
     clean_old_converted_files()
