@@ -1,5 +1,5 @@
 // =========================================================================
-// static/js/main.js (VERSÃO FINAL GARANTIDA COM TODAS AS FERRAMENTAS E CORREÇÕES)
+// static/js/main.js (VERSÃO FINAL SEM VALIDAÇÃO DUPLICADA NO FRONT-END)
 // =========================================================================
 
 function getCookie(name) {
@@ -76,7 +76,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return alert('Para usar esta ferramenta, por favor, carregue um arquivo PDF primeiro.');
         }
         selectedTool = tool;
-
         const toolConfigs = {
             'merge': { title: 'Unir PDFs', body: `<div class="mb-3"><label for="mergeFilesInput" class="form-label">Selecione dois ou mais arquivos PDF:</label><input type="file" id="mergeFilesInput" class="form-control" multiple accept=".pdf"></div><div id="previewContainer" class="row g-3"><p class="text-muted text-center">Nenhum arquivo selecionado.</p></div>` },
             'split': { title: 'Dividir PDF', body: `<div class="row border-bottom pb-3 mb-3"><div class="col-md-7"><h6>Modo de Divisão</h6><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitIndividual" value="individual" checked><label class="form-check-label" for="splitIndividual">Extrair páginas selecionadas (.zip)</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitMerge" value="merge"><label class="form-check-label" for="splitMerge">Unir páginas selecionadas</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitPairs" value="pairs"><label class="form-check-label" for="splitPairs">Dividir em pares</label></div></div><div class="col-md-5 d-flex align-items-center justify-content-end" id="splitPageControls"><div class="form-check me-3"><input class="form-check-input" type="checkbox" id="selectAllPages"><label class="form-check-label" for="selectAllPages">Selecionar Todas</label></div><button class="btn btn-secondary" id="rotateAllBtn"><i class="fas fa-sync-alt me-2"></i>Girar Todas</button></div></div><div id="previewContainer" class="row g-3 text-center"><div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div></div>` },
@@ -89,7 +88,6 @@ document.addEventListener('DOMContentLoaded', function() {
             'image-to-pdf': { title: 'Imagens para PDF', body: `<div class="mb-3"><label for="imageFilesInput" class="form-label">Selecione uma ou mais imagens:</label><input type="file" id="imageFilesInput" class="form-control" multiple accept="image/*"></div><div id="imageListPreview" class="mt-3"><p class="text-muted">Nenhuma imagem selecionada.</p></div>` },
             'convert-image': { title: 'Converter Formato de Imagem', body: `<div class="row"><div class="col-md-7"><div class="mb-3"><label for="convertImageInput" class="form-label">Selecione uma imagem:</label><input type="file" id="convertImageInput" class="form-control" accept="image/*"></div><div id="convertImageOptions" class="d-none"><div class="mb-3"><label class="form-label">Converter de <strong id="originalFormat"></strong> para:</label><select id="targetFormatSelect" class="form-select"></select></div><button class="btn btn-secondary" id="rotateImageBtn"><i class="fas fa-sync-alt"></i> Girar Imagem</button></div></div><div class="col-md-5 d-flex align-items-center justify-content-center"><div id="imagePreviewContainer" class="text-center"><p class="text-muted">Pré-visualização</p></div></div></div>` }
         };
-        
         const modalEl = document.getElementById('toolModal');
         const modalTitle = document.getElementById('toolModalTitle');
         const modalBody = document.getElementById('toolModalBody');
@@ -99,10 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
 
         switch (tool) {
-            case 'merge':
-                toolState.merge = { files: [], rotations: {} };
-                document.getElementById('mergeFilesInput').addEventListener('change', window.App.renderMergePreview);
-                break;
+            case 'merge': toolState.merge = { files: [], rotations: {} }; document.getElementById('mergeFilesInput').addEventListener('change', window.App.renderMergePreview); break;
             case 'split':
                 toolState.split = { selections: [], rotations: [] };
                 renderPagePreview(uploadedFile.file, uploadedFile, 'split');
@@ -111,17 +106,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('rotateAllBtn').addEventListener('click', () => window.App.rotateAllPreviews('split'));
                 handleSplitModeChange();
                 break;
-            case 'pdf-to-image':
-                toolState.image = { rotations: [] };
-                renderPagePreview(uploadedFile.file, uploadedFile, 'image');
-                document.getElementById('rotateAllBtn').addEventListener('click', () => window.App.rotateAllPreviews('image'));
-                break;
+            case 'pdf-to-image': toolState.image = { rotations: [] }; renderPagePreview(uploadedFile.file, uploadedFile, 'image'); document.getElementById('rotateAllBtn').addEventListener('click', () => window.App.rotateAllPreviews('image')); break;
             case 'image-to-pdf': document.getElementById('imageFilesInput').addEventListener('change', handleImageToPdfPreview); break;
-            case 'convert-image':
-                toolState.convertImage = { rotation: 0 };
-                document.getElementById('convertImageInput').addEventListener('change', renderImageConverterPreview);
-                document.getElementById('rotateImageBtn').addEventListener('click', window.App.rotateConvertImage);
-                break;
+            case 'convert-image': toolState.convertImage = { rotation: 0 }; document.getElementById('convertImageInput').addEventListener('change', renderImageConverterPreview); document.getElementById('rotateImageBtn').addEventListener('click', window.App.rotateConvertImage); break;
         }
     }
 
@@ -179,9 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
             Array.from(files).forEach(file => { fileListHTML += `<li class="list-group-item d-flex align-items-center"><i class="fas fa-file-image me-2 text-info"></i>${file.name}</li>`; });
             fileListHTML += '</ul>';
             previewContainer.innerHTML = fileListHTML;
-        } else {
-            previewContainer.innerHTML = '<p class="text-muted">Nenhuma imagem selecionada.</p>';
-        }
+        } else { previewContainer.innerHTML = '<p class="text-muted">Nenhuma imagem selecionada.</p>'; }
     }
     
     function renderImageConverterPreview(event) {
@@ -235,6 +220,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // =========================================================================
+    // CORREÇÃO FINAL: VALIDAÇÃO DO SPLIT REMOVIDA DO FRONT-END
+    // =========================================================================
     async function processSelectedTool() {
         const formData = new FormData();
         switch (selectedTool) {
@@ -259,9 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'split':
                 formData.append('file', uploadedFile.file);
                 const splitMode = document.querySelector('input[name="splitMode"]:checked').value;
-                if ((splitMode === 'individual' || splitMode === 'merge') && !toolState.split.selections.includes(true)) {
-                    throw new Error('Nenhuma página foi selecionada.');
-                }
+                // A VALIDAÇÃO FOI REMOVIDA DAQUI. O BACKEND FARÁ A CHECAGEM.
                 formData.append('split_mode', splitMode);
                 formData.append('selections', JSON.stringify(toolState.split.selections));
                 formData.append('rotations', JSON.stringify(toolState.split.rotations));
@@ -321,10 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const previewContainer = document.getElementById('previewContainer');
             previewContainer.innerHTML = '';
             toolState.merge = { files: Array.from(files), rotations: {} };
-            if (files.length === 0) {
-                previewContainer.innerHTML = '<p class="text-muted text-center">Nenhum arquivo selecionado.</p>';
-                return;
-            }
+            if (files.length === 0) { previewContainer.innerHTML = '<p class="text-muted text-center">Nenhum arquivo selecionado.</p>'; return; }
             toolState.merge.files.forEach((file, index) => {
                 toolState.merge.rotations[index] = 0;
                 const fileReader = new FileReader();
