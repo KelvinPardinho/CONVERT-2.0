@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         selectedTool = tool;
 
+        // CORREÇÃO 1: Adicionado o atributo 'for' nas labels para que o clique funcione.
         const toolConfigs = {
             'split': { title: 'Dividir PDF', body: `<div class="row border-bottom pb-3 mb-3"><div class="col-md-7"><h6>Modo de Divisão</h6><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitIndividual" value="individual" checked><label class="form-check-label" for="splitIndividual">Extrair páginas selecionadas (.zip)</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitMerge" value="merge"><label class="form-check-label" for="splitMerge">Unir páginas selecionadas</label></div><div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="splitPairs" value="pairs"><label class="form-check-label" for="splitPairs">Dividir em pares</label></div></div><div class="col-md-5 d-flex align-items-center justify-content-end" id="splitPageControls"><div class="form-check me-3"><input class="form-check-input" type="checkbox" id="selectAllPages"><label class="form-check-label" for="selectAllPages">Selecionar Todas</label></div><button class="btn btn-secondary" id="rotateAllBtn"><i class="fas fa-sync-alt me-2"></i>Girar Todas</button></div></div><div id="previewContainer" class="row g-3 text-center"><div class="col-12"><i class="fas fa-spinner fa-spin me-2"></i>Carregando...</div></div>` },
             'compress': { title: 'Comprimir PDF', body: `<div class="mb-3"><label for="compressionLevel" class="form-label">Nível de Compressão:</label><select id="compressionLevel" class="form-select"><option value="low">Baixa (Melhor Qualidade)</option><option value="medium" selected>Média (Equilibrado)</option><option value="high">Alta (Menor Tamanho)</option></select></div>` },
@@ -106,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // LÓGICA CORRIGIDA PARA O SPLIT
+    // CORREÇÃO 2: Lógica ajustada para esconder apenas os controles de seleção, não a pré-visualização inteira.
     function handleSplitModeChange() {
         const selectedMode = document.querySelector('input[name="splitMode"]:checked').value;
         const pageControls = document.getElementById('splitPageControls');
@@ -114,11 +115,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const showSelectionUI = selectedMode === 'individual' || selectedMode === 'merge';
         
-        if (pageControls) pageControls.style.display = showSelectionUI ? 'flex' : 'none';
+        if (pageControls) {
+            pageControls.style.display = showSelectionUI ? 'flex' : 'none';
+        }
         
-        // Esconde/mostra apenas os checkboxes dentro dos cards, não o container inteiro
         if (previewContainer) {
-            previewContainer.querySelectorAll('.form-check').forEach(el => {
+            previewContainer.querySelectorAll('.card .form-check').forEach(el => {
                 el.style.display = showSelectionUI ? 'flex' : 'none';
             });
         }
@@ -149,7 +151,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.getElementById(`page-canvas-wrapper-${i-1}`).appendChild(canvas);
                     });
                 }
-                handleSplitModeChange(); // Garante que a UI esteja correta após renderizar
+                // Chama a função após renderizar para garantir que o estado inicial da UI esteja correto.
+                setTimeout(handleSplitModeChange, 100); 
             });
         };
         fileReader.readAsArrayBuffer(file);
