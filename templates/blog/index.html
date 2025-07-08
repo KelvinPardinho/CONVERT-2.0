@@ -5,6 +5,7 @@
 
 {% block extra_head %}
 <style>
+    /* Estilos permanecem os mesmos */
     .blog-header { background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1554415707-6e8cf603245d?q=80&w=2070'); background-size: cover; background-position: center; padding: 4rem 0; color: white; }
     .article-card { transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid #dee2e6; }
     .article-card:hover { transform: translateY(-5px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
@@ -27,7 +28,8 @@
     <div class="container">
         
         <!-- Artigo em Destaque -->
-        {% if featured_post %}
+        <!-- CORREÇÃO DE SEGURANÇA: Adicionado 'if featured_post.slug' -->
+        {% if featured_post and featured_post.slug %}
         <div class="featured-article mb-5">
             <h2 class="fw-bold mb-4">Artigo em Destaque</h2>
             <div class="card article-card overflow-hidden">
@@ -56,7 +58,7 @@
         </div>
         {% endif %}
 
-        <!-- Filtro de Categorias (simplificado para evitar erros) -->
+        <!-- Filtro de Categorias -->
         {% if categories %}
         <div class="categories-filter text-center mb-5">
             <div class="d-inline-flex flex-wrap gap-2 justify-content-center">
@@ -69,10 +71,11 @@
         {% endif %}
         
         <!-- Grade de Artigos -->
-        <h2 class="fw-bold mb-4">{% if featured_post %}Outros Artigos{% else %}Todos os Artigos{% endif %}</h2>
+        <h2 class="fw-bold mb-4">{% if featured_post and featured_post.slug %}Outros Artigos{% else %}Todos os Artigos{% endif %}</h2>
         <div class="row g-4" id="articlesGrid">
-            <!-- CORRIGIDO: Loop agora usa 'other_posts' -->
             {% for post in other_posts %}
+                <!-- CORREÇÃO DE SEGURANÇA: Adicionado 'if post.slug' -->
+                {% if post.slug %}
                 <div class="col-lg-4 col-md-6">
                     <a href="{% url 'blog:detalhe_artigo' slug=post.slug %}" class="text-decoration-none">
                         <div class="card article-card h-100">
@@ -89,9 +92,10 @@
                         </div>
                     </a>
                 </div>
+                {% endif %}
             {% empty %}
                 <div class="col-12 text-center">
-                    <p class="text-muted fs-4">Nenhum artigo publicado ainda. Volte em breve!</p>
+                    <p class="text-muted fs-4">Nenhum artigo publicado ainda.</p>
                 </div>
             {% endfor %}
         </div>
