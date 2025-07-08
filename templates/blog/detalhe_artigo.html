@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ post.title }} - Blog Convert{% endblock %}
+
+{% block extra_head %}
+<style>
+    .post-header {
+        padding: 4rem 0;
+        background-color: #f8f9fa; /* Um fundo sutil */
+    }
+    .post-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.5rem;
+        margin: 1.5rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="post-header text-center">
+    <div class="container">
+        {% if post.category %}
+            <a href="#" class="text-decoration-none"><span class="badge bg-primary fs-6 mb-3">{{ post.category.name }}</span></a>
+        {% endif %}
+        <h1 class="display-5 fw-bold">{{ post.title }}</h1>
+        <p class="text-muted mt-3">
+            Por {{ post.author.get_full_name|default:post.author.username }} em {{ post.created_at|date:"d \d\e F \d\e Y" }}
+        </p>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                {% if post.cover_image %}
+                    <img src="{{ post.cover_image.url }}" class="img-fluid rounded shadow-sm mb-4" alt="{{ post.title }}">
+                {% endif %}
+                
+                <div class="post-content fs-5">
+                    <!-- O 'safe' é importante para renderizar o HTML do seu editor de texto -->
+                    {{ post.content|safe }}
+                </div>
+                
+                <hr class="my-5">
+                
+                <a href="{% url 'blog:blog_index' %}" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-2"></i>Voltar para o Blog</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

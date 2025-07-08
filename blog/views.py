@@ -1,28 +1,34 @@
-from django.shortcuts import render
+# blog/views.py (VERSÃO CORRIGIDA)
+
+from django.shortcuts import render, get_object_or_404
 from .models import Post, Category
 
-
-
 def blog_index(request):
-    # Busca todos os posts que estão marcados como "publicados"
     all_posts = Post.objects.filter(is_published=True)
-    
-    # Busca o post em destaque (o mais recente marcado como destaque)
     featured_post = all_posts.filter(is_featured=True).first()
     
-    # Exclui o post em destaque da lista de posts recentes para não repetir
     if featured_post:
-        recent_posts = all_posts.exclude(pk=featured_post.pk)[:6] # Pega os 6 mais recentes
+        # PONTO 2 CORRIGIDO: Agora mostramos todos os outros posts
+        other_posts = all_posts.exclude(pk=featured_post.pk)
     else:
-        recent_posts = all_posts[:6]
+        # Se não há destaque, mostramos todos os posts
+        other_posts = all_posts
 
-    # Busca todas as categorias
     categories = Category.objects.all()
 
     context = {
         'featured_post': featured_post,
-        'recent_posts': recent_posts,
+        'other_posts': other_posts, # Mudamos o nome da variável para maior clareza
         'categories': categories,
     }
     
-    return render(request, 'blog/index.html', context) # Assumindo que seu template se chama index.html dentro de blog/templates/blog/
+    return render(request, 'blog/index.html', context)
+
+# NOVA VIEW: Para exibir um único artigo
+def detalhe_artigo(request, slug):
+    # Busca o post pelo slug ou retorna um erro 404 se não encontrar
+    post = get_object_or_404(Post, slug=slug, is_published=True)
+    context = {
+        'post': post
+    }
+    return render(request, 'templates/blog/detalhe_artigo.html', context)
