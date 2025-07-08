@@ -1,5 +1,3 @@
-# blog/views.py (VERSÃO FINAL COM CAMINHOS DE TEMPLATE CORRIGIDOS)
-
 from django.shortcuts import render, get_object_or_404
 from .models import Post, Category
 
@@ -8,19 +6,18 @@ def blog_index(request):
     featured_post = all_posts.filter(is_featured=True).first()
     
     if featured_post:
-        other_posts = all_posts.exclude(pk=featured_post.pk)
+        recent_posts = all_posts.exclude(pk=featured_post.pk)[:6]
     else:
-        other_posts = all_posts
+        recent_posts = all_posts[:6]
 
     categories = Category.objects.all()
 
     context = {
         'featured_post': featured_post,
-        'other_posts': other_posts,
+        'recent_posts': recent_posts,
         'categories': categories,
     }
     
-    # CORREÇÃO: Removido o caminho redundante do template.
     return render(request, 'blog/index.html', context)
 
 def detalhe_artigo(request, slug):
@@ -28,5 +25,4 @@ def detalhe_artigo(request, slug):
     context = {
         'post': post
     }
-    # CORREÇÃO: Removido o caminho redundante do template.
     return render(request, 'blog/detalhe_artigo.html', context)
