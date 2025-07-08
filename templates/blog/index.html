@@ -5,14 +5,13 @@
 
 {% block extra_head %}
 <style>
-    /* Estilos permanecem os mesmos */
     .blog-header { background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1554415707-6e8cf603245d?q=80&w=2070'); background-size: cover; background-position: center; padding: 4rem 0; color: white; }
     .article-card { transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid #dee2e6; }
     .article-card:hover { transform: translateY(-5px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
     .article-card img { height: 200px; object-fit: cover; }
     .featured-article .card-img-top, .featured-article .img-fluid { height: 100%; min-height: 400px; object-fit: cover; }
     .category-btn { transition: all 0.2s ease-in-out; }
-    .category-btn.active { background-color: #0d6efd !important; color: white !important; border-color: #0d6efd !important; }
+    .category-btn.active, .category-btn:hover { background-color: #0d6efd !important; color: white !important; border-color: #0d6efd !important; }
 </style>
 {% endblock %}
 
@@ -27,8 +26,7 @@
 <section class="py-5">
     <div class="container">
         
-        <!-- Artigo em Destaque -->
-        <!-- CORREÇÃO DE SEGURANÇA: Adicionado 'if featured_post.slug' -->
+        <!-- Artigo em Destaque (Com verificação de segurança) -->
         {% if featured_post and featured_post.slug %}
         <div class="featured-article mb-5">
             <h2 class="fw-bold mb-4">Artigo em Destaque</h2>
@@ -36,7 +34,7 @@
                 <div class="row g-0">
                     <div class="col-lg-6">
                         <a href="{% url 'blog:detalhe_artigo' slug=featured_post.slug %}">
-                            {% if featured_post.cover_image %}<img src="{{ featured_post.cover_image.url }}" class="img-fluid rounded-start" alt="{{ featured_post.title }}">{% endif %}
+                            {% if featured_post.cover_image %}<img src="{{ featured_post.cover_image.url }}" class="img-fluid rounded-start" alt="{{ featured_post.title }}">{% else %}<div class="bg-light h-100"></div>{% endif %}
                         </a>
                     </div>
                     <div class="col-lg-6 d-flex flex-column">
@@ -64,6 +62,7 @@
             <div class="d-inline-flex flex-wrap gap-2 justify-content-center">
                 <a href="{% url 'blog:blog_index' %}" class="btn btn-outline-secondary category-btn active">Todos</a>
                 {% for category in categories %}
+                    <!-- O link aqui ainda é um placeholder, a filtragem precisa ser implementada na view -->
                     <a href="#" class="btn btn-outline-secondary category-btn">{{ category.name }}</a>
                 {% endfor %}
             </div>
@@ -74,12 +73,12 @@
         <h2 class="fw-bold mb-4">{% if featured_post and featured_post.slug %}Outros Artigos{% else %}Todos os Artigos{% endif %}</h2>
         <div class="row g-4" id="articlesGrid">
             {% for post in other_posts %}
-                <!-- CORREÇÃO DE SEGURANÇA: Adicionado 'if post.slug' -->
-                {% if post.slug %}
+                <!-- CORREÇÃO: A verificação 'if post.slug' foi removida daqui para mostrar todos os posts -->
                 <div class="col-lg-4 col-md-6">
-                    <a href="{% url 'blog:detalhe_artigo' slug=post.slug %}" class="text-decoration-none">
+                    <!-- O link só funciona se o slug existir, mas o card sempre aparece -->
+                    <a href="{% if post.slug %}{% url 'blog:detalhe_artigo' slug=post.slug %}{% else %}#{% endif %}" class="text-decoration-none">
                         <div class="card article-card h-100">
-                            {% if post.cover_image %}<img src="{{ post.cover_image.url }}" class="card-img-top" alt="{{ post.title }}">{% endif %}
+                            {% if post.cover_image %}<img src="{{ post.cover_image.url }}" class="card-img-top" alt="{{ post.title }}">{% else %}<div class="bg-light h-100 card-img-top"></div>{% endif %}
                             <div class="card-body d-flex flex-column">
                                 {% if post.category %}<span class="badge bg-secondary mb-2 align-self-start">{{ post.category.name }}</span>{% endif %}
                                 <h5 class="card-title fw-bold text-dark">{{ post.title }}</h5>
@@ -92,10 +91,9 @@
                         </div>
                     </a>
                 </div>
-                {% endif %}
             {% empty %}
                 <div class="col-12 text-center">
-                    <p class="text-muted fs-4">Nenhum artigo publicado ainda.</p>
+                    <p class="text-muted fs-4">Nenhum artigo publicado ainda. Volte em breve!</p>
                 </div>
             {% endfor %}
         </div>
