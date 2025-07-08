@@ -1,5 +1,5 @@
 // =========================================================================
-// static/js/main.js (VERSÃO FINAL SEM VALIDAÇÃO DUPLICADA NO FRONT-END)
+// static/js/main.js (VERSÃO FINAL COM CORREÇÃO DE LÓGICA ASSÍNCRONA)
 // =========================================================================
 
 function getCookie(name) {
@@ -199,92 +199,101 @@ document.addEventListener('DOMContentLoaded', function() {
             const button = this;
             button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
             button.disabled = true;
-            try {
-                processSelectedTool()
-                    .then(result => {
-                        if (result.success) {
-                            bootstrap.Modal.getInstance(document.getElementById('toolModal')).hide();
-                            showResults(result);
-                        } else { throw new Error(result.message || 'Ocorreu um erro no servidor.'); }
-                    })
-                    .catch(error => { alert(`Erro na comunicação com o servidor: ${error.message}`); })
-                    .finally(() => {
-                        button.innerHTML = 'Processar';
-                        button.disabled = false;
-                    });
-            } catch (error) {
-                alert(`Erro: ${error.message}`);
-                button.innerHTML = 'Processar';
-                button.disabled = false;
-            }
+
+            // --- LÓGICA DE EXECUÇÃO CORRIGIDA ---
+            prepareAndSendData()
+                .then(result => {
+                    if (result.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('toolModal')).hide();
+                        showResults(result);
+                    } else {
+                        // Se o backend retornou `success: false`, mostra a mensagem dele
+                        throw new Error(result.message || 'Ocorreu um erro no servidor.');
+                    }
+                })
+                .catch(error => {
+                    // Trata erros de validação do front-end ou de comunicação com o servidor
+                    alert(`Erro: ${error.message}`);
+                })
+                .finally(() => {
+                    button.innerHTML = 'Processar';
+                    button.disabled = false;
+                });
         });
     }
 
-    // =========================================================================
-    // CORREÇÃO FINAL: VALIDAÇÃO DO SPLIT REMOVIDA DO FRONT-END
-    // =========================================================================
-    async function processSelectedTool() {
-        const formData = new FormData();
-        switch (selectedTool) {
-            case 'merge':
-                const mergeInput = document.getElementById('mergeFilesInput');
-                if (mergeInput.files.length < 2) throw new Error('Selecione pelo menos 2 arquivos para unir.');
-                Array.from(mergeInput.files).forEach(file => formData.append('files', file));
-                formData.append('rotations', JSON.stringify(toolState.merge.rotations));
-                break;
-            case 'convert-image':
-                const imageInput = document.getElementById('convertImageInput');
-                if (imageInput.files.length === 0) throw new Error('Nenhum arquivo de imagem selecionado.');
-                formData.append('file', imageInput.files[0]);
-                formData.append('target_format', document.getElementById('targetFormatSelect').value);
-                formData.append('rotation', toolState.convertImage.rotation);
-                break;
-            case 'image-to-pdf':
-                const imagesInput = document.getElementById('imageFilesInput');
-                if (imagesInput.files.length === 0) throw new Error('Nenhum arquivo de imagem selecionado.');
-                Array.from(imagesInput.files).forEach(file => { formData.append('files', file); });
-                break;
-            case 'split':
-                formData.append('file', uploadedFile.file);
-                const splitMode = document.querySelector('input[name="splitMode"]:checked').value;
-                // A VALIDAÇÃO FOI REMOVIDA DAQUI. O BACKEND FARÁ A CHECAGEM.
-                formData.append('split_mode', splitMode);
-                formData.append('selections', JSON.stringify(toolState.split.selections));
-                formData.append('rotations', JSON.stringify(toolState.split.rotations));
-                break;
-            case 'compress':
-                formData.append('file', uploadedFile.file);
-                formData.append('compression_level', document.getElementById('compressionLevel').value);
-                break;
-            case 'protect':
-                formData.append('file', uploadedFile.file);
-                const password = document.getElementById('protectPassword').value;
-                if (!password) throw new Error('A senha não pode estar vazia.');
-                if (password !== document.getElementById('confirmPassword').value) throw new Error('As senhas não coincidem.');
-                formData.append('password', password);
-                break;
-            case 'unlock':
-                formData.append('file', uploadedFile.file);
-                formData.append('password', document.getElementById('unlockPassword').value);
-                break;
-            case 'pdf-to-image':
-                formData.append('file', uploadedFile.file);
-                formData.append('image_format', document.getElementById('imageFormat').value);
-                formData.append('rotations', JSON.stringify(toolState.image.rotations));
-                break;
-            default:
-                formData.append('file', uploadedFile.file);
-                break;
-        }
-        return fetch(`/api/${selectedTool}/`, { method: 'POST', headers: { 'X-CSRFToken': csrftoken }, body: formData })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().catch(() => {
-                        throw new Error(`Erro no servidor: ${response.status} ${response.statusText}`)
-                    }).then(err => { throw new Error(err.message || `Erro ${response.status}`) });
+    // Nova função para encapsular a preparação dos dados
+    function prepareAndSendData() {
+        return new Promise((resolve, reject) => {
+            try {
+                const formData = new FormData();
+                switch (selectedTool) {
+                    case 'merge':
+                        const mergeInput = document.getElementById('mergeFilesInput');
+                        if (mergeInput.files.length < 2) throw new Error('Selecione pelo menos 2 arquivos para unir.');
+                        Array.from(mergeInput.files).forEach(file => formData.append('files', file));
+                        formData.append('rotations', JSON.stringify(toolState.merge.rotations));
+                        break;
+                    case 'convert-image':
+                        const imageInput = document.getElementById('convertImageInput');
+                        if (imageInput.files.length === 0) throw new Error('Nenhum arquivo de imagem selecionado.');
+                        formData.append('file', imageInput.files[0]);
+                        formData.append('target_format', document.getElementById('targetFormatSelect').value);
+                        formData.append('rotation', toolState.convertImage.rotation);
+                        break;
+                    case 'image-to-pdf':
+                        const imagesInput = document.getElementById('imageFilesInput');
+                        if (imagesInput.files.length === 0) throw new Error('Nenhum arquivo de imagem selecionado.');
+                        Array.from(imagesInput.files).forEach(file => { formData.append('files', file); });
+                        break;
+                    case 'split':
+                        formData.append('file', uploadedFile.file);
+                        const splitMode = document.querySelector('input[name="splitMode"]:checked').value;
+                        formData.append('split_mode', splitMode);
+                        formData.append('selections', JSON.stringify(toolState.split.selections));
+                        formData.append('rotations', JSON.stringify(toolState.split.rotations));
+                        break;
+                    case 'compress':
+                        formData.append('file', uploadedFile.file);
+                        formData.append('compression_level', document.getElementById('compressionLevel').value);
+                        break;
+                    case 'protect':
+                        formData.append('file', uploadedFile.file);
+                        const password = document.getElementById('protectPassword').value;
+                        if (!password) throw new Error('A senha não pode estar vazia.');
+                        if (password !== document.getElementById('confirmPassword').value) throw new Error('As senhas não coincidem.');
+                        formData.append('password', password);
+                        break;
+                    case 'unlock':
+                        formData.append('file', uploadedFile.file);
+                        formData.append('password', document.getElementById('unlockPassword').value);
+                        break;
+                    case 'pdf-to-image':
+                        formData.append('file', uploadedFile.file);
+                        formData.append('image_format', document.getElementById('imageFormat').value);
+                        formData.append('rotations', JSON.stringify(toolState.image.rotations));
+                        break;
+                    default:
+                        formData.append('file', uploadedFile.file);
+                        break;
                 }
-                return response.json();
-            });
+                
+                // Envia os dados e resolve a Promise com o resultado
+                fetch(`/api/${selectedTool}/`, { method: 'POST', headers: { 'X-CSRFToken': csrftoken }, body: formData })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().catch(() => ({ success: false, message: `Erro no servidor: ${response.status} ${response.statusText}` })).then(err => { throw err; });
+                        }
+                        return response.json();
+                    })
+                    .then(resolve)
+                    .catch(reject);
+
+            } catch (error) {
+                // Rejeita a Promise se houver um erro de validação do lado do cliente
+                reject(error);
+            }
+        });
     }
 
     function showResults(result) {
@@ -302,42 +311,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.App = {
-        renderMergePreview: function(event) {
-            const files = event.target.files;
-            const previewContainer = document.getElementById('previewContainer');
-            previewContainer.innerHTML = '';
-            toolState.merge = { files: Array.from(files), rotations: {} };
-            if (files.length === 0) { previewContainer.innerHTML = '<p class="text-muted text-center">Nenhum arquivo selecionado.</p>'; return; }
-            toolState.merge.files.forEach((file, index) => {
-                toolState.merge.rotations[index] = 0;
-                const fileReader = new FileReader();
-                fileReader.onload = (e) => {
-                    pdfjsLib.getDocument({ data: e.target.result }).promise.then(pdf => {
-                        pdf.getPage(1).then(page => {
-                            const canvas = document.createElement('canvas');
-                            const context = canvas.getContext('2d');
-                            const scale = 0.3;
-                            const viewport = page.getViewport({ scale });
-                            canvas.height = viewport.height;
-                            canvas.width = viewport.width;
-                            page.render({ canvasContext: context, viewport: viewport });
-                            const cardHTML = `<div class="col-md-4 col-sm-6"><div class="card h-100"><div class="card-body p-2 d-flex flex-column align-items-center"><p class="mb-1 mt-2 small text-truncate w-100 px-2" title="${file.name}">${file.name}</p><div id="merge-canvas-wrapper-${index}" class="my-2" style="transition: transform 0.3s ease;"></div><button class="btn btn-outline-secondary btn-sm" onclick="window.App.rotateMergeFile(${index})"><i class="fas fa-sync-alt"></i> Girar Arquivo</button></div></div></div>`;
-                            previewContainer.insertAdjacentHTML('beforeend', cardHTML);
-                            document.getElementById(`merge-canvas-wrapper-${index}`).appendChild(canvas);
-                        });
-                    });
-                };
-                fileReader.readAsArrayBuffer(file);
-            });
-        },
-        rotateMergeFile: function(fileIndex) {
-            toolState.merge.rotations[fileIndex] = (toolState.merge.rotations[fileIndex] + 90) % 360;
-            const wrapper = document.getElementById(`merge-canvas-wrapper-${fileIndex}`);
-            if (wrapper) wrapper.style.transform = `rotate(${toolState.merge.rotations[fileIndex]}deg)`;
-        },
         rotatePagePreview: function(pageIndex, mode) {
             const state = toolState[mode];
-            if (!state || !state.rotations) return;
             state.rotations[pageIndex] = (state.rotations[pageIndex] + 90) % 360;
             const wrapper = document.getElementById(`page-canvas-wrapper-${pageIndex}`);
             if (wrapper) wrapper.style.transform = `rotate(${state.rotations[pageIndex]}deg)`;
@@ -355,10 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         rotateAllPreviews: function(mode) {
             const state = toolState[mode];
-            if (!state || !state.rotations) return;
-            for (let i = 0; i < state.rotations.length; i++) {
-                this.rotatePagePreview(i, mode);
-            }
+            for (let i = 0; i < state.rotations.length; i++) { this.rotatePagePreview(i, mode); }
         },
         rotateConvertImage: function() {
             toolState.convertImage.rotation = (toolState.convertImage.rotation + 90) % 360;
