@@ -5,20 +5,22 @@
 
 {% block extra_head %}
 <style>
-    /* Estilos permanecem os mesmos */
     .blog-header { background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1554415707-6e8cf603245d?q=80&w=2070'); background-size: cover; background-position: center; padding: 4rem 0; color: white; }
-    .article-card { transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--card-border-color); }
+    .article-card { transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid #dee2e6; }
     .article-card:hover { transform: translateY(-5px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
     .article-card img { height: 200px; object-fit: cover; }
     .featured-article .card-img-top, .featured-article .img-fluid { height: 100%; min-height: 400px; object-fit: cover; }
     .category-btn { transition: all 0.2s ease-in-out; }
-    .category-btn.active { background-color: var(--bs-primary) !important; color: white !important; border-color: var(--bs-primary) !important; }
+    .category-btn.active { background-color: #0d6efd !important; color: white !important; border-color: #0d6efd !important; }
 </style>
 {% endblock %}
 
 {% block content %}
 <section class="blog-header text-center">
-    <!-- ... (seção do header do blog inalterada) ... -->
+    <div class="container">
+        <h1 class="display-4 fw-bold">Nosso Blog</h1>
+        <p class="lead col-lg-8 mx-auto">Artigos, tutoriais e novidades sobre o universo de documentos digitais.</p>
+    </div>
 </section>
 
 <section class="py-5">
@@ -31,7 +33,6 @@
             <div class="card article-card overflow-hidden">
                 <div class="row g-0">
                     <div class="col-lg-6">
-                        <!-- LINK CORRIGIDO -->
                         <a href="{% url 'blog:detalhe_artigo' slug=featured_post.slug %}">
                             {% if featured_post.cover_image %}<img src="{{ featured_post.cover_image.url }}" class="img-fluid rounded-start" alt="{{ featured_post.title }}">{% endif %}
                         </a>
@@ -40,10 +41,9 @@
                         <div class="card-body p-4">
                             {% if featured_post.category %}<a href="#" class="text-decoration-none"><span class="badge bg-primary mb-2">{{ featured_post.category.name }}</span></a>{% endif %}
                             <h3 class="card-title fw-bold">
-                                <!-- LINK CORRIGIDO -->
                                 <a href="{% url 'blog:detalhe_artigo' slug=featured_post.slug %}" class="text-decoration-none text-dark">{{ featured_post.title }}</a>
                             </h3>
-                            <p class="card-text text-muted my-3">{{ featured_post.content|truncatewords_html:35 }}</p>
+                            <p class="card-text text-muted my-3">{{ featured_post.content|truncatewords_html:35|safe }}</p>
                         </div>
                         <div class="card-footer bg-transparent border-0 pt-0 pb-4 ps-4">
                              <div class="d-flex align-items-center text-muted small">
@@ -56,32 +56,31 @@
         </div>
         {% endif %}
 
-        <!-- Filtro de Categorias -->
+        <!-- Filtro de Categorias (simplificado para evitar erros) -->
         {% if categories %}
         <div class="categories-filter text-center mb-5">
             <div class="d-inline-flex flex-wrap gap-2 justify-content-center">
-                <button class="btn btn-outline-secondary category-btn active" onclick="filterByCategory('all', this)">Todos</button>
+                <a href="{% url 'blog:blog_index' %}" class="btn btn-outline-secondary category-btn active">Todos</a>
                 {% for category in categories %}
-                    <button class="btn btn-outline-secondary category-btn" onclick="filterByCategory('{{ category.slug }}', this)">{{ category.name }}</button>
+                    <a href="#" class="btn btn-outline-secondary category-btn">{{ category.name }}</a>
                 {% endfor %}
             </div>
         </div>
         {% endif %}
         
-        <!-- Grade de Artigos Recentes -->
-        <!-- LÓGICA RESTAURADA -->
-        <h2 class="fw-bold mb-4">Artigos Recentes</h2>
+        <!-- Grade de Artigos -->
+        <h2 class="fw-bold mb-4">{% if featured_post %}Outros Artigos{% else %}Todos os Artigos{% endif %}</h2>
         <div class="row g-4" id="articlesGrid">
-            {% for post in recent_posts %}
-                <div class="col-lg-4 col-md-6" data-category="{{ post.category.slug|default:'sem-categoria' }}">
-                    <!-- LINK CORRIGIDO -->
+            <!-- CORRIGIDO: Loop agora usa 'other_posts' -->
+            {% for post in other_posts %}
+                <div class="col-lg-4 col-md-6">
                     <a href="{% url 'blog:detalhe_artigo' slug=post.slug %}" class="text-decoration-none">
                         <div class="card article-card h-100">
                             {% if post.cover_image %}<img src="{{ post.cover_image.url }}" class="card-img-top" alt="{{ post.title }}">{% endif %}
                             <div class="card-body d-flex flex-column">
                                 {% if post.category %}<span class="badge bg-secondary mb-2 align-self-start">{{ post.category.name }}</span>{% endif %}
                                 <h5 class="card-title fw-bold text-dark">{{ post.title }}</h5>
-                                <p class="card-text text-muted small flex-grow-1">{{ post.content|truncatewords:20 }}</p>
+                                <p class="card-text text-muted small flex-grow-1">{{ post.content|truncatewords:20|safe }}</p>
                                 <div class="d-flex justify-content-between align-items-center text-muted small mt-2">
                                     <span><i class="fas fa-user me-1"></i> {{ post.author.get_full_name|default:post.author.username }}</span>
                                     <span><i class="fas fa-calendar-alt me-1"></i> {{ post.created_at|date:"d M, Y" }}</span>
@@ -91,17 +90,11 @@
                     </a>
                 </div>
             {% empty %}
-                <div class="col-12 text-center"><p class="text-muted fs-4">Nenhum artigo publicado ainda.</p></div>
+                <div class="col-12 text-center">
+                    <p class="text-muted fs-4">Nenhum artigo publicado ainda. Volte em breve!</p>
+                </div>
             {% endfor %}
         </div>
     </div>
 </section>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-    // Seu script original para filtro e busca foi mantido
-    document.addEventListener('DOMContentLoaded', function() { /* ... */ });
-    function filterByCategory(category, element) { /* ... */ }
-</script>
 {% endblock %}
