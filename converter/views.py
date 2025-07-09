@@ -1,9 +1,8 @@
-# converter/views.py (VERSÃO FINAL COM CORREÇÃO NO SPLIT_PDF)
-
 from django.shortcuts import render
 from django.http import JsonResponse, FileResponse, Http404, HttpRequest
 from django.conf import settings
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 import os
 import time
 import json
@@ -60,10 +59,10 @@ def upload_file(request):
 
 
 # --- VIEWS DAS FERRAMENTAS ---
+@require_POST # Garante que esta view só pode ser acessada via POST
 def sign_pdf(request):
-    clean_old_converted_files() # Sua função de limpeza
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
+    # A verificação 'if request.method != 'POST' não é mais necessária
+    clean_old_converted_files()
 
     try:
         pdf_file = request.FILES.get('document_file')
@@ -107,7 +106,6 @@ def sign_pdf(request):
     except (ValueError, TypeError):
         return JsonResponse({'success': False, 'message': 'Dados de posicionamento inválidos.'}, status=400)
     except Exception as e:
-        # Adiciona um log para depuração no servidor
         print(f"Erro inesperado na view sign_pdf: {str(e)}")
         return JsonResponse({'success': False, 'message': f'Ocorreu um erro inesperado no servidor.'}, status=500)
     
