@@ -59,7 +59,58 @@ def upload_file(request):
 
 
 # --- VIEWS DAS FERRAMENTAS ---
+def sign_pdf(request):
+    clean_old_converted_files()
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
 
+    try:
+        pdf_file = request.FILES.get('document_file')
+        pfx_file = request.FILES.get('certificate_file')
+        password = request.POST.get('password')
+
+        if not all([pdf_file, pfx_file, password]):
+            return JsonResponse({'success': False, 'message': 'Documento, certificado e senha são obrigatórios.'}, status=400)
+
+        # Coleta os dados de posicionamento da assinatura do POST
+        signature_data = {
+            'pageIndex': int(request.POST.get('page_index', 0)),
+            'x1': int(request.POST.get('x1', 50)),
+            'y1': int(request.POST.get('y1', 50)),
+            'x2': int(request.POST.get('x2', 300)),
+            'y2': int(request.POST.get('y2', 150)),
+        }
+        
+        converted_dir = get_converted_dir() # Reutiliza sua função auxiliar
+        base_filename = os.path.splitext(pdf_file.name)[0]
+
+        # Chama o novo serviço de assinatura
+        success, message, output_filename, _ = process_sign_pdf(
+            pdf_bytes=pdf_file.read(),
+            pfx_bytes=pfx_file.read(),
+            password=password,
+            signature_data=signature_data,
+            output_dir=converted_dir,
+            base_filename=base_filename
+        )
+
+        if not success:
+            return JsonResponse({'success': False, 'message': message}, status=500)
+
+        # Gera a URL de download correta
+        download_url = reverse('converter:download_converted', args=[output_filename])
+
+        return JsonResponse({
+            'success': True,
+            'message': message,
+            'download_url': download_url
+        })
+
+    except (ValueError, TypeError):
+        return JsonResponse({'success': False, 'message': 'Dados de posicionamento inválidos.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Ocorreu um erro inesperado: {str(e)}'}, status=500)
+    
 def convert_image(request):
     clean_old_converted_files()
     if request.method != 'POST': return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
