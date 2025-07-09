@@ -41,7 +41,7 @@
                             <div class="card-body p-4">
                                 {% if featured_post.category %}<span class="badge bg-primary mb-2">{{ featured_post.category.name }}</span>{% endif %}
                                 <h3 class="card-title fw-bold">{{ featured_post.title }}</h3>
-                                <p class="card-text text-muted my-3">{{ featured_post.content|truncatewords_html:35|safe }}</p>
+                                <p class="card-text text-muted small flex-grow-1">{{ post.content|truncatewords:20|safe }}</p>
                             </div>
                             <div class="card-footer bg-transparent border-0 pt-0 pb-4 ps-4">
                                 <div class="d-flex align-items-center text-muted small">

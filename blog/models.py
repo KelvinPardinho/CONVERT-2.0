@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
+from ckeditor.fields import RichTextField
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Nome")
@@ -22,7 +23,7 @@ class Category(models.Model):
 class Post(models.Model):
     title = models.CharField(max_length=200, verbose_name="Título")
     slug = models.SlugField(max_length=200, unique=True, blank=True, verbose_name="Slug (URL)")
-    content = models.TextField(verbose_name="Conteúdo")
+    content = RichTextField(verbose_name="Conteúdo")
     cover_image = models.ImageField(upload_to='blog_covers/', blank=True, null=True, verbose_name="Imagem de Capa")
     author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Autor")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Categoria")
