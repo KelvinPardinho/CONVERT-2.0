@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 from django.utils.text import slugify
 
 class Category(models.Model):
-    # ... (seu modelo Category está perfeito, não mude nada) ...
     name = models.CharField(max_length=100, unique=True, verbose_name="Nome")
     slug = models.SlugField(max_length=100, unique=True, blank=True)
 
@@ -22,9 +21,7 @@ class Category(models.Model):
 
 class Post(models.Model):
     title = models.CharField(max_length=200, verbose_name="Título")
-    # ================== CAMPO ADICIONADO ==================
-    slug = models.SlugField(max_length=200, null=True, blank=True, verbose_name="Slug (URL)")
-    # ======================================================
+    slug = models.SlugField(max_length=200, unique=True, blank=True, verbose_name="Slug (URL)")
     content = models.TextField(verbose_name="Conteúdo")
     cover_image = models.ImageField(upload_to='blog_covers/', blank=True, null=True, verbose_name="Imagem de Capa")
     author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Autor")
@@ -36,6 +33,8 @@ class Post(models.Model):
 
     # Sobrescreve o método save para gerar o slug automaticamente
     def save(self, *args, **kwargs):
+        # Esta lógica só será usada para NOVOS posts por enquanto.
+        # A migração de dados cuidará dos posts antigos.
         if not self.slug:
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
