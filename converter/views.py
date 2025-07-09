@@ -18,7 +18,7 @@ from .services.protect_pdf import process_protect_pdf
 from .services.unlock_pdf import process_unlock_pdf
 from .services.image_to_pdf import process_image_to_pdf
 from .services.convert_image import process_convert_image
-from.services.sign_pdf import process_sign_pdf
+from .services.sign_pdf import process_sign_pdf 
 
 def clean_old_converted_files():
     converted_dir = os.path.join(settings.MEDIA_ROOT, 'converted')
@@ -61,7 +61,7 @@ def upload_file(request):
 
 # --- VIEWS DAS FERRAMENTAS ---
 def sign_pdf(request):
-    clean_old_converted_files()
+    clean_old_converted_files() # Sua função de limpeza
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
 
@@ -73,7 +73,6 @@ def sign_pdf(request):
         if not all([pdf_file, pfx_file, password]):
             return JsonResponse({'success': False, 'message': 'Documento, certificado e senha são obrigatórios.'}, status=400)
 
-        # Coleta os dados de posicionamento da assinatura do POST
         signature_data = {
             'pageIndex': int(request.POST.get('page_index', 0)),
             'x1': int(request.POST.get('x1', 50)),
@@ -82,10 +81,9 @@ def sign_pdf(request):
             'y2': int(request.POST.get('y2', 150)),
         }
         
-        converted_dir = get_converted_dir() # Reutiliza sua função auxiliar
+        converted_dir = get_converted_dir()
         base_filename = os.path.splitext(pdf_file.name)[0]
 
-        # Chama o novo serviço de assinatura
         success, message, output_filename, _ = process_sign_pdf(
             pdf_bytes=pdf_file.read(),
             pfx_bytes=pfx_file.read(),
@@ -98,7 +96,6 @@ def sign_pdf(request):
         if not success:
             return JsonResponse({'success': False, 'message': message}, status=500)
 
-        # Gera a URL de download correta
         download_url = reverse('converter:download_converted', args=[output_filename])
 
         return JsonResponse({
@@ -110,7 +107,9 @@ def sign_pdf(request):
     except (ValueError, TypeError):
         return JsonResponse({'success': False, 'message': 'Dados de posicionamento inválidos.'}, status=400)
     except Exception as e:
-        return JsonResponse({'success': False, 'message': f'Ocorreu um erro inesperado: {str(e)}'}, status=500)
+        # Adiciona um log para depuração no servidor
+        print(f"Erro inesperado na view sign_pdf: {str(e)}")
+        return JsonResponse({'success': False, 'message': f'Ocorreu um erro inesperado no servidor.'}, status=500)
     
 def convert_image(request):
     clean_old_converted_files()
