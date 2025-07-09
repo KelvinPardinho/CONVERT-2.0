@@ -2,11 +2,8 @@ import os
 import uuid
 from datetime import datetime
 from io import BytesIO
-
-# Imports corretos e necessários para a versão atual do pyhanko
 from pyhanko.sign import signers
 from pyhanko.pdf_utils.writer import IncrementalPdfFileWriter
-# O PdfFileReader não é necessário neste fluxo, então foi removido.
 
 def process_sign_pdf(
     pdf_bytes: bytes,
@@ -22,8 +19,13 @@ def process_sign_pdf(
             pfx_bytes, passphrase=password.encode()
         )
 
-        # 2. Prepara o escritor de PDF
-        pdf_writer = IncrementalPdfFileWriter(BytesIO(pdf_bytes))
+        # 2. Define os metadados da assinatura
+        signature_meta = signers.SignatureMetadata(
+            reason="Assinatura Digital de Documento",
+            location="Sao Paulo, Brazil",
+            signer=signer.subject_name,
+            signing_time=datetime.now()
+        )
         
         # 3. Extrai os dados de posicionamento da assinatura
         page_index = signature_data.get('pageIndex', 0)
@@ -32,31 +34,30 @@ def process_sign_pdf(
         x2 = signature_data.get('x2', 300)
         y2 = signature_data.get('y2', 150)
         
-        # 4. Adiciona o campo de assinatura ao PDF
-        # O pyhanko cria um campo de assinatura vazio primeiro
-        signature_field_name = signers.SignatureFieldSpec(
-            sig_field_name=f'Signature-{uuid.uuid4().hex}',
-            box=(x1, y1, x2, y2),
-            on_page=page_index,
-        )
-        pdf_writer.add_signature_field(signature_field_name)
+        # 4. Cria uma instância do PdfSigner com os metadados
+        pdf_signer = signers.PdfSigner(signature_meta, signer)
 
-        # 5. Preenche o campo de assinatura com a assinatura digital
-        signed_pdf_buffer = signers.sign_pdf(
-            pdf_writer,
-            signers.SignatureMetadata(signing_time=datetime.now()),
-            signer=signer,
-            existing_fields_only=True, # Assina apenas o campo que acabamos de criar
-        )
+        # 5. Salva o PDF assinado em um buffer de memória
+        output_buffer = BytesIO()
 
-        # 6. Salva o arquivo final no disco
+        pdf_signer.sign_pdf(
+            BytesIO(pdf_bytes),  
+            output=output_buffer, 
+            appearance=signers.PdfSignatureAppearance(
+                box=(x1, y1, x2, y2),
+                page=page_index,
+            )
+        )
+        
+        output_buffer.seek(0)
+
+        # 6. Salva o buffer final no disco
         output_filename = f"{base_filename}_signed_{uuid.uuid4().hex[:6]}.pdf"
         output_path = os.path.join(output_dir, output_filename)
         
         with open(output_path, 'wb') as f:
-            f.write(signed_pdf_buffer.read())
+            f.write(output_buffer.read())
 
-        # Retorna o dicionário de dados extra vazio, conforme a assinatura da função
         return True, "Documento assinado com sucesso!", output_filename, {}
 
     except Exception as e:
@@ -65,4 +66,4 @@ def process_sign_pdf(
             return False, "Senha do certificado incorreta. Por favor, verifique e tente novamente.", None, {}
         
         print(f"Erro inesperado no pyhanko: {error_message}") 
-        return False, f"Ocorreu um erro ao assinar o PDF. Verifique os logs do servidor.", None, {}
+        return False, f"Ocorreu um erro ao assinar o PDF. Por favor, contate o suporte.", None, {}
