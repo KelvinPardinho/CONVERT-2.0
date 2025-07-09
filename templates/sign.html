@@ -30,11 +30,6 @@
         cursor: move;
         resize: both; /* Permite redimensionar em todas as direções */
         overflow: hidden;
-        /* Imagem de carimbo opcional */
-        /* background-image: url("{% static 'images/stamp_template.png' %}"); */
-        /* background-size: contain; */
-        /* background-repeat: no-repeat; */
-        /* background-position: center; */
     }
 </style>
 
@@ -123,13 +118,12 @@
         const signBtn = document.getElementById('signDocumentBtn');
         const pdfViewer = document.getElementById('pdfViewer');
         
-        // Variáveis globais para o estado da assinatura
         let signatureData = { pageIndex: 0, x1: 50, y1: 50, x2: 250, y2: 100 };
         let activeCanvas = null;
         let pdfDoc = null; 
 
         // --- Lógica de Upload e Renderização ---
-        docInput.addEventListener('change', async (event) => {
+        docInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
             pdfViewer.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3">Carregando documento...</p></div>';
@@ -137,7 +131,7 @@
             const fileReader = new FileReader();
             fileReader.onload = (e) => {
                 pdfjsLib.getDocument({ data: e.target.result }).promise.then(pdf => {
-                    pdfDoc = pdf; // Armazena o objeto PDF para uso posterior
+                    pdfDoc = pdf;
                     pdfViewer.innerHTML = ''; 
                     for (let i = 1; i <= pdf.numPages; i++) {
                         pdf.getPage(i).then(page => {
@@ -198,7 +192,6 @@
             resizeObserver.observe(element);
 
             function dragMouseDown(e) {
-                e = e || window.event;
                 e.preventDefault();
                 pos3 = e.clientX;
                 pos4 = e.clientY;
@@ -207,7 +200,6 @@
             }
 
             function elementDrag(e) {
-                e = e || window.event;
                 e.preventDefault();
                 pos1 = pos3 - e.clientX;
                 pos2 = pos4 - e.clientY;
@@ -229,16 +221,16 @@
             if (!signatureBox || !activeCanvas || !pdfDoc) return;
             
             const pageNumber = parseInt(activeCanvas.dataset.pageNumber) + 1;
+            
             pdfDoc.getPage(pageNumber).then(page => {
                 const originalViewport = page.getViewport({ scale: 1.0 });
-                const scaledViewport = page.getViewport({ scale: 1.2 });
-                const scale = scaledViewport.width / originalViewport.width;
+                const scale = activeCanvas.width / originalViewport.width;
 
                 const boxTop = signatureBox.offsetTop - activeCanvas.offsetTop;
                 const boxLeft = signatureBox.offsetLeft - activeCanvas.offsetLeft;
 
                 const pdfX1 = boxLeft / scale;
-                const pdfY1 = (scaledViewport.height - boxTop - signatureBox.offsetHeight) / scale;
+                const pdfY1 = (activeCanvas.height - boxTop - signatureBox.offsetHeight) / scale;
                 const pdfX2 = pdfX1 + (signatureBox.offsetWidth / scale);
                 const pdfY2 = pdfY1 + (signatureBox.offsetHeight / scale);
 
@@ -264,52 +256,54 @@
             
             updateSignatureData();
 
-            const formData = new FormData();
-            formData.append('document_file', docFile);
-            formData.append('certificate_file', certFile);
-            formData.append('password', password);
-            formData.append('page_index', signatureData.pageIndex);
-            formData.append('x1', signatureData.x1);
-            formData.append('y1', signatureData.y1);
-            formData.append('x2', signatureData.x2);
-            formData.append('y2', signatureData.y2);
-            
-            const spinner = signBtn.querySelector('.spinner-border');
-            const icon = signBtn.querySelector('.fas');
-            spinner.classList.remove('d-none');
-            if (icon) icon.classList.add('d-none');
-            signBtn.disabled = true;
+            setTimeout(() => { // Pequeno delay para garantir que a última coordenada foi capturada
+                const formData = new FormData();
+                formData.append('document_file', docFile);
+                formData.append('certificate_file', certFile);
+                formData.append('password', password);
+                formData.append('page_index', signatureData.pageIndex);
+                formData.append('x1', signatureData.x1);
+                formData.append('y1', signatureData.y1);
+                formData.append('x2', signatureData.x2);
+                formData.append('y2', signatureData.y2);
+                
+                const spinner = signBtn.querySelector('.spinner-border');
+                const icon = signBtn.querySelector('.fas');
+                spinner.classList.remove('d-none');
+                if (icon) icon.classList.add('d-none');
+                signBtn.disabled = true;
 
-            const csrftoken = getCookie('csrftoken');
+                const csrftoken = getCookie('csrftoken');
 
-            fetch("{% url 'converter:sign_pdf' %}", {
-                method: 'POST',
-                headers: { 'X-CSRFToken': csrftoken },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Sucesso! O download do seu arquivo assinado começará.');
-                    const link = document.createElement('a');
-                    link.href = data.download_url;
-                    link.setAttribute('download', '');
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                } else {
-                    alert(`Erro: ${data.message}`);
-                }
-            })
-            .catch(error => {
-                alert('Ocorreu um erro de comunicação com o servidor.');
-                console.error('Error:', error);
-            })
-            .finally(() => {
-                spinner.classList.add('d-none');
-                if (icon) icon.classList.remove('d-none');
-                signBtn.disabled = false;
-            });
+                fetch("{% url 'converter:sign_pdf' %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrftoken },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Sucesso! O download do seu arquivo assinado começará.');
+                        const link = document.createElement('a');
+                        link.href = data.download_url;
+                        link.setAttribute('download', '');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    } else {
+                        alert(`Erro: ${data.message}`);
+                    }
+                })
+                .catch(error => {
+                    alert('Ocorreu um erro de comunicação com o servidor.');
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    spinner.classList.add('d-none');
+                    if (icon) icon.classList.remove('d-none');
+                    signBtn.disabled = false;
+                });
+            }, 200); // 200ms de delay
         });
         
         function getCookie(name) {
