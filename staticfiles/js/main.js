@@ -1,5 +1,5 @@
 // =========================================================================
-// static/js/main.js (VERSÃO FINAL SEM VALIDAÇÃO DUPLICADA NO FRONT-END)
+// static/js/main.js (VERSÃO FINAL COM CORREÇÃO DE ESCOPO)
 // =========================================================================
 
 function getCookie(name) {
@@ -17,17 +17,20 @@ function getCookie(name) {
     return cookieValue;
 }
 
+// CORREÇÃO PRINCIPAL: A variável 'toolState' é declarada no escopo global
+// para ser acessível por todas as funções, incluindo 'window.App'.
+let toolState = {
+    split: { selections: [], rotations: [] },
+    image: { rotations: [] },
+    convertImage: { rotation: 0 },
+    merge: { files: [], rotations: {} }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     
     const csrftoken = getCookie('csrftoken');
     let selectedTool = null;
     let uploadedFile = null;
-    let toolState = {
-        split: { selections: [], rotations: [] },
-        image: { rotations: [] },
-        convertImage: { rotation: 0 },
-        merge: { files: [], rotations: {} }
-    };
 
     const uploadForm = document.getElementById('uploadForm');
     const fileInput = document.getElementById('fileInput');
@@ -199,19 +202,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const button = this;
             button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
             button.disabled = true;
-
             prepareAndSendData()
                 .then(result => {
                     if (result.success) {
                         bootstrap.Modal.getInstance(document.getElementById('toolModal')).hide();
                         showResults(result);
-                    } else {
-                        throw new Error(result.message || 'Ocorreu um erro no servidor.');
-                    }
+                    } else { throw new Error(result.message || 'Ocorreu um erro no servidor.'); }
                 })
-                .catch(error => {
-                    alert(error.message);
-                })
+                .catch(error => { alert(error.message); })
                 .finally(() => {
                     button.innerHTML = 'Processar';
                     button.disabled = false;
@@ -303,37 +301,73 @@ document.addEventListener('DOMContentLoaded', function() {
         modalBody.innerHTML = content;
         modal.show();
     }
-
-    window.App = {
-        rotatePagePreview: function(pageIndex, mode) {
-            const state = toolState[mode];
-            if (!state || !state.rotations) return;
-            state.rotations[pageIndex] = (state.rotations[pageIndex] + 90) % 360;
-            const wrapper = document.getElementById(`page-canvas-wrapper-${pageIndex}`);
-            if (wrapper) wrapper.style.transform = `rotate(${state.rotations[pageIndex]}deg)`;
-        },
-        togglePageSelection: function(pageIndex) {
-            toolState.split.selections[pageIndex] = !toolState.split.selections[pageIndex];
-            document.getElementById('selectAllPages').checked = toolState.split.selections.every(s => s);
-        },
-        toggleAllSelections: function(isChecked) {
-            toolState.split.selections.fill(isChecked);
-            for (let i = 0; i < toolState.split.selections.length; i++) {
-                const checkbox = document.getElementById(`page-checkbox-${i}`);
-                if (checkbox) checkbox.checked = isChecked;
-            }
-        },
-        rotateAllPreviews: function(mode) {
-            const state = toolState[mode];
-            if (!state || !state.rotations) return;
-            for (let i = 0; i < state.rotations.length; i++) {
-                this.rotatePagePreview(i, mode);
-            }
-        },
-        rotateConvertImage: function() {
-            toolState.convertImage.rotation = (toolState.convertImage.rotation + 90) % 360;
-            const img = document.getElementById('imagePreview');
-            if (img) img.style.transform = `rotate(${toolState.convertImage.rotation}deg)`;
-        }
-    };
 });
+
+// O objeto App agora é declarado no escopo global para que a chamada 'onchange' no HTML possa encontrá-lo
+window.App = {
+    rotatePagePreview: function(pageIndex, mode) {
+        // Acessa o toolState global
+        const state = toolState[mode];
+        if (!state || !state.rotations) return;
+        state.rotations[pageIndex] = (state.rotations[pageIndex] + 90) % 360;
+        const wrapper = document.getElementById(`page-canvas-wrapper-${pageIndex}`);
+        if (wrapper) wrapper.style.transform = `rotate(${state.rotations[pageIndex]}deg)`;
+    },
+    togglePageSelection: function(pageIndex) {
+        // Acessa e modifica o toolState global
+        toolState.split.selections[pageIndex] = !toolState.split.selections[pageIndex];
+        document.getElementById('selectAllPages').checked = toolState.split.selections.every(s => s);
+    },
+    toggleAllSelections: function(isChecked) {
+        toolState.split.selections.fill(isChecked);
+        for (let i = 0; i < toolState.split.selections.length; i++) {
+            const checkbox = document.getElementById(`page-checkbox-${i}`);
+            if (checkbox) checkbox.checked = isChecked;
+        }
+    },
+    rotateAllPreviews: function(mode) {
+        const state = toolState[mode];
+        if (!state || !state.rotations) return;
+        for (let i = 0; i < state.rotations.length; i++) {
+            this.rotatePagePreview(i, mode);
+        }
+    },
+    rotateConvertImage: function() {
+        toolState.convertImage.rotation = (toolState.convertImage.rotation + 90) % 360;
+        const img = document.getElementById('imagePreview');
+        if (img) img.style.transform = `rotate(${toolState.convertImage.rotation}deg)`;
+    },
+    renderMergePreview: function(event) {
+        const files = event.target.files;
+        const previewContainer = document.getElementById('previewContainer');
+        previewContainer.innerHTML = '';
+        toolState.merge = { files: Array.from(files), rotations: {} };
+        if (files.length === 0) { previewContainer.innerHTML = '<p class="text-muted text-center">Nenhum arquivo selecionado.</p>'; return; }
+        toolState.merge.files.forEach((file, index) => {
+            toolState.merge.rotations[index] = 0;
+            const fileReader = new FileReader();
+            fileReader.onload = (e) => {
+                pdfjsLib.getDocument({ data: e.target.result }).promise.then(pdf => {
+                    pdf.getPage(1).then(page => {
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        const scale = 0.3;
+                        const viewport = page.getViewport({ scale });
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        page.render({ canvasContext: context, viewport: viewport });
+                        const cardHTML = `<div class="col-md-4 col-sm-6"><div class="card h-100"><div class="card-body p-2 d-flex flex-column align-items-center"><p class="mb-1 mt-2 small text-truncate w-100 px-2" title="${file.name}">${file.name}</p><div id="merge-canvas-wrapper-${index}" class="my-2" style="transition: transform 0.3s ease;"></div><button class="btn btn-outline-secondary btn-sm" onclick="window.App.rotateMergeFile(${index})"><i class="fas fa-sync-alt"></i> Girar Arquivo</button></div></div></div>`;
+                        previewContainer.insertAdjacentHTML('beforeend', cardHTML);
+                        document.getElementById(`merge-canvas-wrapper-${index}`).appendChild(canvas);
+                    });
+                });
+            };
+            fileReader.readAsArrayBuffer(file);
+        });
+    },
+    rotateMergeFile: function(fileIndex) {
+        toolState.merge.rotations[fileIndex] = (toolState.merge.rotations[fileIndex] + 90) % 360;
+        const wrapper = document.getElementById(`merge-canvas-wrapper-${fileIndex}`);
+        if (wrapper) wrapper.style.transform = `rotate(${toolState.merge.rotations[fileIndex]}deg)`;
+    },
+};
