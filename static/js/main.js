@@ -1,5 +1,5 @@
 // =========================================================================
-// static/js/main.js (VERSÃO FINAL COM CORREÇÃO DE LÓGICA ASSÍNCRONA)
+// static/js/main.js (VERSÃO FINAL SEM VALIDAÇÃO DUPLICADA NO FRONT-END)
 // =========================================================================
 
 function getCookie(name) {
@@ -200,20 +200,17 @@ document.addEventListener('DOMContentLoaded', function() {
             button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
             button.disabled = true;
 
-            // --- LÓGICA DE EXECUÇÃO CORRIGIDA ---
             prepareAndSendData()
                 .then(result => {
                     if (result.success) {
                         bootstrap.Modal.getInstance(document.getElementById('toolModal')).hide();
                         showResults(result);
                     } else {
-                        // Se o backend retornou `success: false`, mostra a mensagem dele
                         throw new Error(result.message || 'Ocorreu um erro no servidor.');
                     }
                 })
                 .catch(error => {
-                    // Trata erros de validação do front-end ou de comunicação com o servidor
-                    alert(`Erro: ${error.message}`);
+                    alert(error.message);
                 })
                 .finally(() => {
                     button.innerHTML = 'Processar';
@@ -222,7 +219,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Nova função para encapsular a preparação dos dados
     function prepareAndSendData() {
         return new Promise((resolve, reject) => {
             try {
@@ -248,8 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         break;
                     case 'split':
                         formData.append('file', uploadedFile.file);
-                        const splitMode = document.querySelector('input[name="splitMode"]:checked').value;
-                        formData.append('split_mode', splitMode);
+                        formData.append('split_mode', document.querySelector('input[name="splitMode"]:checked').value);
                         formData.append('selections', JSON.stringify(toolState.split.selections));
                         formData.append('rotations', JSON.stringify(toolState.split.rotations));
                         break;
@@ -278,11 +273,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         break;
                 }
                 
-                // Envia os dados e resolve a Promise com o resultado
                 fetch(`/api/${selectedTool}/`, { method: 'POST', headers: { 'X-CSRFToken': csrftoken }, body: formData })
                     .then(response => {
                         if (!response.ok) {
-                            return response.json().catch(() => ({ success: false, message: `Erro no servidor: ${response.status} ${response.statusText}` })).then(err => { throw err; });
+                            return response.json().catch(() => ({ success: false, message: `Erro no servidor: ${response.status} ${response.statusText}` }))
+                                .then(err => { throw new Error(err.message || 'Erro desconhecido'); });
                         }
                         return response.json();
                     })
@@ -290,7 +285,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     .catch(reject);
 
             } catch (error) {
-                // Rejeita a Promise se houver um erro de validação do lado do cliente
                 reject(error);
             }
         });
@@ -313,6 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.App = {
         rotatePagePreview: function(pageIndex, mode) {
             const state = toolState[mode];
+            if (!state || !state.rotations) return;
             state.rotations[pageIndex] = (state.rotations[pageIndex] + 90) % 360;
             const wrapper = document.getElementById(`page-canvas-wrapper-${pageIndex}`);
             if (wrapper) wrapper.style.transform = `rotate(${state.rotations[pageIndex]}deg)`;
@@ -330,7 +325,10 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         rotateAllPreviews: function(mode) {
             const state = toolState[mode];
-            for (let i = 0; i < state.rotations.length; i++) { this.rotatePagePreview(i, mode); }
+            if (!state || !state.rotations) return;
+            for (let i = 0; i < state.rotations.length; i++) {
+                this.rotatePagePreview(i, mode);
+            }
         },
         rotateConvertImage: function() {
             toolState.convertImage.rotation = (toolState.convertImage.rotation + 90) % 360;
