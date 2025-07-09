@@ -122,7 +122,6 @@
         let activeCanvas = null;
         let pdfDoc = null; 
 
-        // --- Lógica de Upload e Renderização ---
         docInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
@@ -143,17 +142,12 @@
                             const viewport = page.getViewport({ scale: scale });
                             canvas.height = viewport.height;
                             canvas.width = viewport.width;
-                            page.render({ canvasContext: context, viewport: viewport }).promise.then(() => {
-                                if (page.pageNumber === 1) {
-                                    activeCanvas = canvas;
-                                    addSignatureBox(canvas);
-                                }
-                            });
+                            page.render({ canvasContext: context, viewport: viewport });
                             pdfViewer.appendChild(canvas);
                             
-                            canvas.addEventListener('click', () => {
+                            canvas.addEventListener('click', (clickEvent) => {
                                 activeCanvas = canvas;
-                                addSignatureBox(canvas);
+                                addOrMoveSignatureBox(clickEvent);
                             });
                         });
                     }
@@ -167,8 +161,7 @@
              if (certInput.files.length > 0) document.getElementById('signStep').classList.remove('d-none');
         });
 
-        // --- Lógica da Caixa de Assinatura ---
-        function addSignatureBox(targetCanvas) {
+        function addOrMoveSignatureBox(clickEvent) {
             let signatureBox = pdfViewer.querySelector('.signature-box');
             if (!signatureBox) {
                 signatureBox = document.createElement('div');
@@ -177,8 +170,14 @@
                 makeDraggableAndResizable(signatureBox);
             }
             
-            signatureBox.style.left = `${targetCanvas.offsetLeft + 50}px`;
-            signatureBox.style.top = `${targetCanvas.offsetTop + 50}px`;
+            const viewerRect = pdfViewer.getBoundingClientRect();
+            const canvasRect = clickEvent.target.getBoundingClientRect();
+
+            const x = (clickEvent.clientX - canvasRect.left) + clickEvent.target.offsetLeft;
+            const y = (clickEvent.clientY - canvasRect.top) + clickEvent.target.offsetTop;
+            
+            signatureBox.style.left = `${x}px`;
+            signatureBox.style.top = `${y}px`;
             signatureBox.style.width = '250px';
             signatureBox.style.height = '100px';
 
@@ -221,7 +220,6 @@
             if (!signatureBox || !activeCanvas || !pdfDoc) return;
             
             const pageNumber = parseInt(activeCanvas.dataset.pageNumber) + 1;
-            
             pdfDoc.getPage(pageNumber).then(page => {
                 const originalViewport = page.getViewport({ scale: 1.0 });
                 const scale = activeCanvas.width / originalViewport.width;
@@ -244,19 +242,16 @@
             });
         }
 
-        // --- Lógica de Assinatura ---
         signBtn.addEventListener('click', function() {
             const docFile = docInput.files[0];
             const certFile = certInput.files[0];
             const password = passwordInput.value;
-
             if (!docFile || !certFile || !password) {
                 return alert('Por favor, preencha todos os campos: Documento, Certificado e Senha.');
             }
             
             updateSignatureData();
-
-            setTimeout(() => { // Pequeno delay para garantir que a última coordenada foi capturada
+            setTimeout(() => {
                 const formData = new FormData();
                 formData.append('document_file', docFile);
                 formData.append('certificate_file', certFile);
@@ -275,11 +270,7 @@
 
                 const csrftoken = getCookie('csrftoken');
 
-                fetch("{% url 'converter:sign_pdf' %}", {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': csrftoken },
-                    body: formData
-                })
+                fetch("{% url 'converter:sign_pdf' %}", { method: 'POST', headers: { 'X-CSRFToken': csrftoken }, body: formData })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -290,9 +281,7 @@
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
-                    } else {
-                        alert(`Erro: ${data.message}`);
-                    }
+                    } else { alert(`Erro: ${data.message}`); }
                 })
                 .catch(error => {
                     alert('Ocorreu um erro de comunicação com o servidor.');
@@ -303,7 +292,7 @@
                     if (icon) icon.classList.remove('d-none');
                     signBtn.disabled = false;
                 });
-            }, 200); // 200ms de delay
+            }, 200);
         });
         
         function getCookie(name) {
