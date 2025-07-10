@@ -81,16 +81,9 @@
     </footer>
 
     <!-- JS Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
-            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" 
-            crossorigin="anonymous">
-    </script>
-    
-    <!-- ======================= SEU JS PRINCIPAL (CORRIGIDO) ======================= -->
-    <!-- A linha que carrega seu main.js foi restaurada para o lugar correto. -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"crossorigin="anonymous"></script>
     <script src="{% static 'js/main.js' %}"></script>
 
-    <!-- Bloco para scripts extras de cada página (como pdf.js, que está no seu index.html) -->
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
