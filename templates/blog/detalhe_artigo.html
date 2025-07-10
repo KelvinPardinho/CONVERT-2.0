@@ -60,14 +60,14 @@
 
             <!-- Barra Lateral (Sidebar - 4 colunas de largura) -->
             <div class="col-lg-4">
-                <div class="sticky-top" style="top: 2rem;">
-                    <h4 class="fw-bold mb-4">Outros Artigos</h4>
+                <div class="sticky-top" style="top: 3rem;">
+                    <h4 class="fw-bold mb-3">Outros Artigos</h4>
                     {% for recent_post in recent_posts %}
                         <div class="sidebar-post-item">
                             {% if recent_post.cover_image %}
                                 <img src="{{ recent_post.cover_image.url }}" alt="{{ recent_post.title }}">
                             {% else %}
-                                <div class="bg-light" style="width: 80px; height: 60px; border-radius: 0.25rem; margin-right: 1rem;"></div>
+                                <div class="bg-light" style="width: 85px; height: 65px; border-radius: 0.3rem; margin-right: 1.5rem;"></div>
                             {% endif %}
                             <div>
                                 <a href="{% if recent_post.slug %}{% url 'blog:detalhe_artigo' slug=recent_post.slug %}{% else %}#{% endif %}" class="text-decoration-none text-dark">
