@@ -9,7 +9,7 @@ urlpatterns = [
     path('assinar/', views.sign_index, name='sign_index'),
 
     # API Endpoints
-    path('api/sign_pdf/', views.sign_pdf, name='sign_pdf'),
+    path('api/sign_pdf', views.sign_pdf, name='sign_pdf'),
     path('api/upload/', views.upload_file, name='upload_file'),
     path('api/merge/', views.merge_pdf, name='merge_pdf'),
     path('api/split/', views.split_pdf, name='split_pdf'),
