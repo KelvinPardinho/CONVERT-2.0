@@ -50,7 +50,7 @@
                             <i class="fa-solid fa-screwdriver-wrench me-2"></i>Ferramentas PDF</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.view_name == 'converter:sign_index' %}active{% endif %}" href="{% url 'converter:sign_pdf' %}">
+                        <a class="nav-link {% if request.resolver_match.view_name == 'converter:sign_index' %}active{% endif %}" href="{% url 'converter:sign_index' %}">
                             <i class="fas fa-signature me-2"></i>Assinar Documento</a>
                     </li>
                     <li class="nav-item">
