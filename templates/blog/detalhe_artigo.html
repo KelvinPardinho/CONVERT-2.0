@@ -1,22 +1,84 @@
 {% extends "base.html" %}
 {% load static %}
+
 {% block title %}{{ post.title }} - Blog Convert{% endblock %}
+
+{% block extra_head %}
+<style>
+    .post-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.5rem;
+        margin: 1.5rem 0;
+    }
+    /* Estilos para a barra lateral de posts recentes */
+    .sidebar-post-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .sidebar-post-item img {
+        width: 80px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 0.25rem;
+        margin-right: 1rem;
+    }
+    .sidebar-post-item h6 {
+        margin-bottom: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <section class="py-5">
     <div class="container">
-        <div class="row justify-content-center">
+        <div class="row">
+            <!-- Coluna Principal do Artigo (8 colunas de largura) -->
             <div class="col-lg-8">
+                {% if post.category %}
+                    <span class="badge bg-primary mb-3">{{ post.category.name }}</span>
+                {% endif %}
                 <h1 class="display-5 fw-bold">{{ post.title }}</h1>
                 <p class="text-muted">Por {{ post.author.get_full_name|default:post.author.username }} em {{ post.created_at|date:"d M, Y" }}</p>
                 <hr>
                 {% if post.cover_image %}
                     <img src="{{ post.cover_image.url }}" class="img-fluid rounded shadow-sm mb-4" alt="{{ post.title }}">
                 {% endif %}
+                
                 <div class="post-content fs-5">
                     {{ post.content|safe }}
                 </div>
+                
                 <hr class="my-5">
+                
                 <a href="{% url 'blog:blog_index' %}" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-2"></i>Voltar para o Blog</a>
+            </div>
+
+            <!-- Barra Lateral (Sidebar - 4 colunas de largura) -->
+            <div class="col-lg-4">
+                <div class="sticky-top" style="top: 2rem;">
+                    <h4 class="fw-bold mb-4">Outros Artigos</h4>
+                    {% for recent_post in recent_posts %}
+                        <div class="sidebar-post-item">
+                            {% if recent_post.cover_image %}
+                                <img src="{{ recent_post.cover_image.url }}" alt="{{ recent_post.title }}">
+                            {% else %}
+                                <div class="bg-light" style="width: 80px; height: 60px; border-radius: 0.25rem; margin-right: 1rem;"></div>
+                            {% endif %}
+                            <div>
+                                <a href="{% if recent_post.slug %}{% url 'blog:detalhe_artigo' slug=recent_post.slug %}{% else %}#{% endif %}" class="text-decoration-none text-dark">
+                                    <h6>{{ recent_post.title }}</h6>
+                                </a>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">Nenhum outro artigo para mostrar.</p>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>

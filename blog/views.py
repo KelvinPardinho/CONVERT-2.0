@@ -24,8 +24,14 @@ def blog_index(request):
     return render(request, 'blog/index.html', context)
 
 def detalhe_artigo(request, slug):
-    post = get_object_or_404(Post, slug=slug, is_published=True)
+    # Busca o post atual que o usuário está lendo
+    post = get_object_or_404(Post.objects.select_related('author', 'category'), slug=slug, is_published=True)
+    
+    # Busca os 5 posts mais recentes para a barra lateral, excluindo o post atual
+    recent_posts = Post.objects.filter(is_published=True).exclude(pk=post.pk).order_by('-created_at')[:5]
+    
     context = {
-        'post': post
+        'post': post,
+        'recent_posts': recent_posts,
     }
     return render(request, 'blog/detalhe_artigo.html', context)
