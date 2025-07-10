@@ -1,9 +1,13 @@
+# services/sign_pdf.py (VERSÃO FINAL GARANTIDA)
+
 import os
 import uuid
 from datetime import datetime
 from io import BytesIO
+
+# Apenas os imports básicos e estáveis
 from pyhanko.sign import signers
-from pyhanko.pdf_utils.writer import IncrementalPdfFileWriter
+from pyhanko.pdf_utils.reader import PdfFileReader
 
 def process_sign_pdf(
     pdf_bytes: bytes,
@@ -14,35 +18,39 @@ def process_sign_pdf(
     base_filename: str
 ) -> tuple:
     try:
-        # 1. Carrega o assinante do certificado PFX
         signer = signers.SimpleSigner.load_pfx(
             pfx_bytes, passphrase=password.encode()
         )
 
-        # 2. Prepara o escritor de PDF
-        pdf_writer = IncrementalPdfFileWriter(BytesIO(pdf_bytes))
-        
-        # 3. Assina o documento sem adicionar uma aparência visual
-        output_buffer = signers.sign_pdf(
-            pdf_writer,
-            signers.SignatureMetadata(signing_time=datetime.now()),
-            signer=signer,
+        signature_meta = signers.SignatureMetadata(
+            reason="Assinatura Digital de Documento",
+            location="Sao Paulo, Brazil",
+            signer=signer.subject_name,
+            signing_time=datetime.now()
         )
+        
+        pdf_signer = signers.PdfSigner(signature_meta, signer)
+        output_buffer = BytesIO()
+        
+        pdf_signer.sign_pdf(
+            PdfFileReader(BytesIO(pdf_bytes)),
+            output=output_buffer
+        )
+        
+        output_buffer.seek(0)
 
-        # 4. Salva o resultado no disco
         output_filename = f"{base_filename}_signed_{uuid.uuid4().hex[:6]}.pdf"
         output_path = os.path.join(output_dir, output_filename)
         
         with open(output_path, 'wb') as f:
             f.write(output_buffer.read())
 
-        return True, "Documento assinado com sucesso! (Assinatura digital aplicada sem carimbo visual)", output_filename, {}
+        return True, "Documento assinado com sucesso (sem aparência visual).", output_filename, {}
 
     except Exception as e:
         error_message = str(e)
         if "decryption failed" in error_message.lower() or "mac verify" in error_message.lower() or "bad password" in error_message.lower():
             return False, "Senha do certificado incorreta. Por favor, verifique e tente novamente.", None, {}
         
-        # Loga o erro real no servidor para podermos ver
         print(f"ERRO CRÍTICO EM SIGN_PDF: {error_message}") 
         return False, f"Ocorreu um erro técnico ao assinar o PDF.", None, {}
