@@ -52,6 +52,7 @@
 <!-- Interface Principal -->
 <section class="pb-5">
     <div class="container">
+        {% csrf_token %}
         <div class="row g-4">
             <!-- Coluna de Controles (Esquerda) -->
             <div class="col-lg-4">
@@ -268,9 +269,9 @@
                 if (icon) icon.classList.add('d-none');
                 signBtn.disabled = true;
 
-                const csrftoken = getCookie('csrftoken');
+                 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-                fetch("{% url 'converter:sign_pdf' %}", { method: 'POST', headers: { 'X-CSRFToken': csrftoken }, body: formData })
+                fetch("{% url 'converter:sign_pdf' %}", {method: 'POST',headers: { 'X-CSRFToken': csrftoken},body: formData})
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
