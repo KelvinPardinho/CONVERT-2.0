@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    Convert indica
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .blog-header { background: linear-gradient(#0d6efd, #0d6efd); background-size: cover; background-position: center; padding: 1rem 0; color: white; }
+    .sidebar-filter .list-group-item { border: none; padding: 0.75rem 1rem; font-weight: 600; color: #34495e; margin-bottom: 5px; }
+    .sidebar-filter .list-group-item.active { background-color: #0d6efd; color: white; border-radius: 5px; }
+    .product-card { border: 1px solid #e0e0e0; border-radius: 8px; transition: all 0.3s ease; overflow: hidden; }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+    .product-image-wrapper { height: 200px; width: 100%; display: flex; align-items: center; justify-content: center; background-color: #ffffff; padding: 0.5rem; }
+    .product-image-wrapper img { max-width: 100%; max-height: 100%; object-fit: contain; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- A seção agora usa a classe 'blog-header' para herdar o mesmo estilo -->
+<section class="blog-header text-center">
+    <div class="container">
+        <h1 class="display-4 fw-bold">Convert Indica!</h1>
+        <p class="lead col-lg-8 mx-auto">
+            Produtos de alta qualidade nos principais canais de venda do Brasil.
+            <br>E você ainda ajuda a manter nosso trabalho 100% gratuito!
+        </p>
+    </div>
+</section>
+
+<div class="container py-5">
+    <div class="row">
+        <!-- Coluna do Filtro Lateral -->
+        <div class="col-lg-3">
+            <!-- FILTRO POR LOJA -->
+            <h4 class="fw-bold mb-3">Lojas</h4>
+            <div class="list-group sidebar-filter mb-4">
+                <a href="{% url 'marketplace:marketplace_index' %}" class="list-group-item list-group-item-action {% if not current_store and not current_category %}active{% endif %}">
+                   Todas as Lojas
+                </a>
+                {% for store in stores %}
+                    <a href="{% url 'marketplace:products_by_store' store.slug %}" class="list-group-item list-group-item-action {% if current_store.slug == store.slug %}active{% endif %}">
+                        {{ store.name }}
+                    </a>
+                {% endfor %}
+            </div>
+
+            <!-- FILTRO POR CATEGORIA -->
+            <h4 class="fw-bold mb-3">Categorias</h4>
+            <div class="list-group sidebar-filter">
+                <a href="{% url 'marketplace:marketplace_index' %}" class="list-group-item list-group-item-action {% if not current_category and not current_store %}active{% endif %}">
+                    Todas as Categorias
+                </a>
+                {% for category in categories %}
+                <a href="{% url 'marketplace:products_by_category' category.slug %}" class="list-group-item list-group-item-action {% if current_category.slug == category.slug %}active{% endif %}">
+                    {{ category.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Coluna da Grade de Produtos -->
+        <div class="col-lg-9">
+            <div class="row g-4">
+                {% for product in products %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="card product-card h-100">
+                        <div class="product-image-wrapper">
+                            <img src="{{ product.image_url }}" alt="{{ product.name }}">
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title fw-bold">{{ product.name }}</h6>
+                            <p class="card-text text-muted small flex-grow-1">{{ product.description|truncatewords:15 }}</p>
+                            <div class="mt-auto">
+                                <a href="{{ product.affiliate_link }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary w-100">Ver na {{ product.store.name }}</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-center text-muted col-12">Nenhum produto encontrado com este filtro.</p>
+                {% endfor %}
+            </div>
+
+            <!-- Paginação -->
+            {% if products.has_other_pages %}
+            <nav class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {% if products.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page={{ products.previous_page_number }}">Anterior</a></li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+                    {% endif %}
+                    {% for i in products.paginator.page_range %}
+                        <li class="page-item {% if products.number == i %}active{% endif %}"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                    {% endfor %}
+                    {% if products.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ products.next_page_number }}">Próxima</a></li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">Próxima</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

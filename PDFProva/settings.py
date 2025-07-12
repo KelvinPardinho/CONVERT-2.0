@@ -19,8 +19,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-for-local-dev-only')
 
 # DEBUG é True localmente, mas False em produção (Render define NODE_ENV).
-DEBUG = os.getenv('NODE_ENV') != 'production'
-
+#DEBUG = os.getenv('NODE_ENV') != 'production'
+DEBUG = True
 # Configura os hosts permitidos
 ALLOWED_HOSTS = []
 RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'converter',
     'blog',
     'ckeditor',
+    'marketplace',
 ]
 
 MIDDLEWARE = [
@@ -129,6 +130,7 @@ STATICFILES_DIRS = [
 # Configuração para arquivos de mídia (uploads de usuários) - para o futuro
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join('/var/data', 'media') # Lembre-se, isso é para desenvolvimento local
-ALLOWED_HOSTS = ['convertpdf.com.br', 'www.convertpdf.com.br']
+#ALLOWED_HOSTS = ['convertpdf.com.br', 'www.convertpdf.com.br']
+ALLOWED_HOSTS = ['localhost','127.0.0.1']
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
