@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% block title %}Comprimir PDF{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* Estilos adaptados para a pré-visualização única com controlos */
+    .preview-card {
+        background-color: #ffffff;
+        border: 1px solid #ced4da;
+        border-radius: .5rem;
+        padding: 1rem;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .preview-card .canvas-wrapper {
+        width: 100%;
+        transition: transform 0.3s ease;
+    }
+    .preview-card canvas {
+        width: 100%;
+        height: auto;
+        border-radius: .25rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .preview-controls {
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light compress-pdf-section">
+    <div class="container">
+        <div class="text-center mb-4">
+            <i class="fas fa-compress-alt fa-4x text-warning mb-3"></i>
+            <h1 class="fw-bold display-5 mb-2">Comprimir PDF</h1>
+            <p class="text-muted fs-5">Reduza o tamanho dos seus arquivos PDF mantendo a melhor qualidade possível.</p>
+        </div>
+        
+        <div id="uploadArea" class="text-center">
+            <button type="button" class="btn btn-lg px-5 py-3 text-white" id="selectFileBtn" style="background-color:#b8b509; border-radius:16px;">
+                <i class="fas fa-file-pdf me-2" aria-hidden="true"></i>Selecionar ficheiro PDF
+            </button>
+            <div class="mt-2 text-muted">ou arraste e solte o PDF aqui</div>
+            <input type="file" id="pdfFile" accept=".pdf" class="d-none">
+        </div>
+
+        <div id="processingArea" class="d-none mt-4">
+            <p class="fs-5 text-center mb-3">Ficheiro: <strong id="fileName" class="text-success"></strong></p>
+            <div class="row g-lg-4 justify-content-center">
+                <div class="col-lg-7">
+                    <div id="preview-container">
+                        <!-- A pré-visualização da primeira página e o botão de rotação aparecerão aqui -->
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="card text-start mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Nível de Compressão</h5>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="compressionLevel" id="levelHigh" value="high">
+                                <label class="form-check-label" for="levelHigh">
+                                    <strong>Compressão Extrema</strong> <small class="d-block text-muted">Menor tamanho, menor qualidade.</small>
+                                </label>
+                            </div>
+                             <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="compressionLevel" id="levelMedium" value="medium" checked>
+                                <label class="form-check-label" for="levelMedium">
+                                    <strong>Compressão Recomendada</strong> <small class="d-block text-muted">Bom equilíbrio entre tamanho e qualidade.</small>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="compressionLevel" id="levelLow" value="low">
+                                <label class="form-check-label" for="levelLow">
+                                    <strong>Baixa Compressão</strong> <small class="d-block text-muted">Melhor qualidade, maior tamanho.</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button id="compressBtn" class="btn btn-warning btn-lg"><i class="fas fa-compress-arrows-alt me-2" aria-hidden="true"></i>Comprimir PDF</button>
+                        <button id="resetBtn" class="btn btn-secondary btn-lg"><i class="fas fa-times me-2" aria-hidden="true"></i>Escolher outro ficheiro</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="progressContainer" class="progress mt-4 mx-auto d-none" style="height: 25px; max-width: 500px;">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;">0%</div>
+        </div>
+        <div id="resultArea" class="mt-4 text-center"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        if (typeof pdfjsLib === 'undefined') { throw new Error("PDF.js não carregou"); }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js`;
+
+        const fileInput = document.getElementById('pdfFile'),
+              selectFileBtn = document.getElementById('selectFileBtn'),
+              compressBtn = document.getElementById('compressBtn'),
+              resetBtn = document.getElementById('resetBtn'),
+              uploadArea = document.getElementById('uploadArea'),
+              processingArea = document.getElementById('processingArea'),
+              previewContainer = document.getElementById('preview-container'),
+              fileNameSpan = document.getElementById('fileName'),
+              progressContainer = document.getElementById('progressContainer'),
+              progressBar = document.getElementById('progressBar'),
+              resultArea = document.getElementById('resultArea');
+        
+        let selectedFile = null;
+        let rotationAngle = 0; // Estado para guardar a rotação
+
+        selectFileBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        const dropZone = document.body;
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; handleFileSelect(); }
+        });
+
+        compressBtn.addEventListener('click', executeCompress);
+        resetBtn.addEventListener('click', resetUI);
+
+        function handleFileSelect(event) {
+            const file = (event && event.target.files[0]) || fileInput.files[0];
+            if (!file) return;
+            selectedFile = file;
+            uploadArea.classList.add('d-none');
+            processingArea.classList.remove('d-none');
+            fileNameSpan.textContent = selectedFile.name;
+            renderFirstPagePreview(selectedFile);
+        }
+
+        async function renderFirstPagePreview(file) {
+            previewContainer.innerHTML = `<div class="d-flex w-100 justify-content-center align-items-center" style="min-height: 200px;"><div class="spinner-border text-success" role="status"></div></div>`;
+            const fileReader = new FileReader();
+            fileReader.onload = async (e) => {
+                try {
+                    const pdf = await pdfjsLib.getDocument({ data: e.target.result }).promise;
+                    const page = await pdf.getPage(1);
+                    
+                    // ==========================================================
+                    // CORREÇÃO 1: TAMANHO DA PRÉ-VISUALIZAÇÃO
+                    // Reduzimos a escala para a miniatura não ser tão grande.
+                    // ==========================================================
+                    const scale = 0.5;
+                    const viewport = page.getViewport({ scale });
+                    
+                    const previewCard = document.createElement('div');
+                    previewCard.className = 'preview-card';
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+
+                    // ==========================================================
+                    // CORREÇÃO 2: ADIÇÃO DO BOTÃO DE ROTAÇÃO
+                    // ==========================================================
+                    previewCard.innerHTML = `
+                        <div class="canvas-wrapper"></div>
+                        <div class="preview-controls">
+                            <button id="rotateBtn" class="btn btn-outline-secondary">
+                                <i class="fas fa-rotate-right me-2"></i>Rotacionar
+                            </button>
+                        </div>
+                    `;
+
+                    previewContainer.innerHTML = '';
+                    previewCard.querySelector('.canvas-wrapper').appendChild(canvas);
+                    previewContainer.appendChild(previewCard);
+
+                    // Adiciona o listener de evento AO BOTÃO CRIADO
+                    document.getElementById('rotateBtn').addEventListener('click', rotatePreview);
+
+                } catch (error) {
+                    alert("Erro ao ler a pré-visualização do PDF.");
+                    resetUI();
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        function rotatePreview() {
+            rotationAngle = (rotationAngle + 90) % 360;
+            const wrapper = previewContainer.querySelector('.canvas-wrapper');
+            if (wrapper) {
+                wrapper.style.transform = `rotate(${rotationAngle}deg)`;
+            }
+        }
+
+        function executeCompress() {
+            if (!selectedFile) { alert("Por favor, selecione um ficheiro."); return; }
+            setProcessingState(true);
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('compression_level', document.querySelector('input[name="compressionLevel"]:checked').value);
+            // ==========================================================
+            // CORREÇÃO 3: ENVIO DA ROTAÇÃO PARA O BACKEND
+            // ==========================================================
+            formData.append('rotation', rotationAngle);
+
+            const url = "{% url 'converter:compress_pdf' %}"; // !! SUBSTITUA PELA SUA URL REAL !!
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                body: formData
+            })
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                if (ok && data.success) {
+                    showSuccess(data.download_url, data.file_name);
+                } else {
+                    throw new Error(data.message || "Ocorreu um erro desconhecido.");
+                }
+            })
+            .catch(error => { showError(error.message); })
+            .finally(() => { setProcessingState(false); });
+        }
+
+        function setProcessingState(isProcessing) {
+            compressBtn.disabled = isProcessing; resetBtn.disabled = isProcessing;
+            if (isProcessing) {
+                resultArea.innerHTML = '';
+                progressContainer.classList.remove('d-none');
+                updateProgressBar(50, 'A comprimir...');
+            } else { setTimeout(() => progressContainer.classList.add('d-none'), 2000); }
+        }
+        function updateProgressBar(percentage, text = `${percentage}%`) {
+            progressBar.style.width = `${percentage}%`; progressBar.textContent = text;
+        }
+        function showSuccess(downloadUrl, fileName) {
+            updateProgressBar(100, 'Concluído!');
+            resultArea.innerHTML = `<div class="alert alert-success">Ficheiro comprimido! <a href="${downloadUrl}" class="btn btn-sm btn-success ms-2" download="${fileName || ''}">Baixar Resultado</a></div>`;
+        }
+        function showError(message) {
+            progressContainer.classList.add('d-none');
+            resultArea.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+        }
+        function resetUI() {
+            fileInput.value = '';
+            selectedFile = null;
+            rotationAngle = 0; // Reset da rotação
+            uploadArea.classList.remove('d-none');
+            processingArea.classList.add('d-none');
+            previewContainer.innerHTML = '';
+            resultArea.innerHTML = '';
+            progressContainer.classList.add('d-none');
+        }
+    } catch (error) {
+        console.error("Erro fatal na inicialização do script:", error);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block title %}Unir PDF{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* O CSS está correto e não precisa de alterações. */
+    .page-card {
+        position: relative;
+        background-color: #ffffff;
+        border: 1px solid #ced4da;
+        border-radius: .5rem;
+        padding: 0.5rem;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .page-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    }
+    .page-card .canvas-wrapper {
+        margin-bottom: 0.5rem;
+        transition: transform 0.3s ease;
+        width: 100%;
+    }
+    .page-card canvas {
+        width: 100%;
+        height: auto;
+        border-radius: .25rem;
+    }
+    .page-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        font-size: 0.8rem;
+        margin-top: auto;
+    }
+    .page-card .file-name {
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100px;
+    }
+    .page-card .rotate-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #6c757d;
+    }
+    .page-card .rotate-btn:hover {
+        color: #1976d2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-5" style="background: #f7f8fa; min-height: 80vh;">
+    <div class="container text-center">
+        <!--
+          *
+          * CORREÇÃO: CABEÇALHO E ÁREA DE UPLOAD RESTAURADOS
+          *
+        -->
+        <div id="uploadArea">
+            <div class="mb-4">
+                <i class="fas fa-object-group text-primary fa-4x"></i>
+            </div>
+            <h1 class="fw-bold mb-3" style="font-size:2.5rem;">Unir PDF</h1>
+            <p class="mb-2 text-muted" style="font-size:1.2rem;">
+                Junte vários arquivos PDF em um único documento de forma rápida e fácil.
+            </p>
+            <div class="d-flex justify-content-center align-items-center mb-2 gap-2">
+                <button type="button" class="btn btn-lg px-5 py-3" id="selectFileBtn"
+                    style="background:#1976d2;color:#fff;font-size:1.3rem;border-radius:16px;box-shadow:0 2px 8px #0001;">
+                    <i class="fas fa-file-pdf me-2"></i>Selecionar arquivos PDF
+                </button>
+            </div>
+            <div class="mb-4 text-muted" style="font-size:1rem;">
+                ou <span style="text-decoration:underline;">arraste e solte os PDFs aqui</span>
+            </div>
+            <input type="file" id="pdfFile" name="file" accept=".pdf" multiple style="display:none;">
+        </div>
+
+        <div id="processingArea" class="d-none mt-4">
+            <div id="page-container" class="row g-3 justify-content-center mb-4" style="min-height: 250px; max-height: 60vh; overflow-y: auto; padding: 1rem; border: 1px solid #dee2e6; border-radius: .5rem; background-color: #f8f9fa;">
+                <!-- As colunas com as pré-visualizações serão inseridas aqui -->
+            </div>
+            <div class="d-grid gap-2 col-6 mx-auto">
+                <button id="convertBtn" class="btn btn-primary btn-lg"><i class="fas fa-file-merge me-2"></i>Unir PDFs</button>
+                <button id="resetBtn" class="btn btn-secondary btn-lg"><i class="fas fa-plus me-2"></i>Adicionar mais ficheiros</button>
+            </div>
+        </div>
+
+        <div class="progress mt-3 mx-auto" style="height: 25px; max-width:500px; display:none;" id="progressBarContainer">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" style="width: 0%">0%</div>
+        </div>
+        <div id="resultArea" class="mt-4"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof pdfjsLib === 'undefined') { alert("Erro ao carregar PDF.js"); return; }
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js`;
+
+    const fileInput = document.getElementById('pdfFile'),
+          selectFileBtn = document.getElementById('selectFileBtn'),
+          convertBtn = document.getElementById('convertBtn'),
+          resetBtn = document.getElementById('resetBtn'),
+          uploadArea = document.getElementById('uploadArea'),
+          processingArea = document.getElementById('processingArea'),
+          pageContainer = document.getElementById('page-container'),
+          progressBarContainer = document.getElementById('progressBarContainer'),
+          progressBar = document.getElementById('progressBar'),
+          resultArea = document.getElementById('resultArea');
+
+    let fileStates = [];
+
+    selectFileBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFileChange);
+    resetBtn.addEventListener('click', () => fileInput.click());
+
+    document.body.addEventListener('dragover', (e) => e.preventDefault());
+    document.body.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer.files.length) { handleFileChange({ target: { files: e.dataTransfer.files } }); }
+    });
+
+    convertBtn.addEventListener('click', executeMerge);
+
+    function handleFileChange(event) {
+        const newFiles = Array.from(event.target.files);
+        if (newFiles.length === 0) return;
+        newFiles.forEach(file => {
+            if (!fileStates.some(f => f.file.name === file.name && f.file.size === file.size)) {
+                fileStates.push({ file: file, rotation: 0, id: `file-${Date.now()}-${Math.random()}` });
+            }
+        });
+        
+        // CORREÇÃO: Esconde a área de upload e mostra a área de processamento
+        uploadArea.classList.add('d-none');
+        processingArea.classList.remove('d-none');
+        renderPreviews();
+    }
+
+    async function renderPreviews() {
+        pageContainer.innerHTML = `<div class="d-flex w-100 justify-content-center align-items-center"><div class="spinner-border text-primary" role="status"></div></div>`;
+        const previewPromises = fileStates.map((state) => createPreviewCard(state));
+        const cards = await Promise.all(previewPromises);
+        pageContainer.innerHTML = '';
+        cards.forEach(card => pageContainer.appendChild(card));
+    }
+
+    async function createPreviewCard(state) {
+        const { file, rotation, id } = state;
+        const colDiv = document.createElement('div');
+        colDiv.className = 'col-6 col-md-4 col-lg-3';
+        colDiv.dataset.fileId = id;
+        const pageCard = document.createElement('div');
+        pageCard.className = 'page-card';
+        const canvas = document.createElement('canvas');
+        try {
+            const data = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data }).promise;
+            const page = await pdf.getPage(1);
+            const scale = 0.4;
+            const viewport = page.getViewport({ scale });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        } catch (e) {
+            colDiv.innerHTML = `<div class="page-card text-danger"><p class="small my-4">Erro ao ler<br/>${file.name}</p></div>`;
+            return colDiv;
+        }
+        pageCard.innerHTML = `
+            <div class="canvas-wrapper"></div>
+            <div class="page-controls">
+                <span class="file-name" title="${file.name}">${file.name}</span>
+                <button class="btn btn-sm rotate-btn"><i class="fas fa-rotate-right"></i></button>
+            </div>
+        `;
+        pageCard.querySelector('.canvas-wrapper').appendChild(canvas);
+        pageCard.querySelector('.rotate-btn').addEventListener('click', () => rotateFilePreview(id));
+        colDiv.appendChild(pageCard);
+        pageCard.querySelector('.canvas-wrapper').style.transform = `rotate(${rotation}deg)`;
+        return colDiv;
+    }
+
+    function rotateFilePreview(fileId) {
+        const stateIndex = fileStates.findIndex(f => f.id === fileId);
+        if (stateIndex === -1) return;
+        fileStates[stateIndex].rotation = (fileStates[stateIndex].rotation + 90) % 360;
+        const cardCol = document.querySelector(`div[data-file-id="${fileId}"]`);
+        if (cardCol) {
+            cardCol.querySelector('.canvas-wrapper').style.transform = `rotate(${fileStates[stateIndex].rotation}deg)`;
+        }
+    }
+
+    function executeMerge() {
+        if (fileStates.length < 2) {
+            alert("Por favor, selecione pelo menos dois arquivos para unir.");
+            return;
+        }
+        convertBtn.disabled = true;
+        resetBtn.disabled = true;
+        resultArea.innerHTML = '';
+        progressBarContainer.style.display = 'block';
+        progressBar.style.width = '50%';
+        progressBar.textContent = 'Enviando...';
+        const formData = new FormData();
+        const rotations = {};
+        fileStates.forEach(state => {
+            formData.append('files', state.file);
+            rotations[state.file.name] = state.rotation;
+        });
+        formData.append('rotations', JSON.stringify(rotations));
+        fetch("{% url 'converter:unir_pdf_page' %}", { // Assuma que a URL de merge é esta. Crie uma API separada se necessário.
+            method: "POST",
+            body: formData,
+            headers: { "X-CSRFToken": "{{ csrf_token }}" }
+        })
+        .then(response => response.json())
+        .then(data => {
+            progressBar.style.width = '100%';
+            progressBar.textContent = 'Concluído!';
+            if (data.success) {
+                resultArea.innerHTML = `<div class="alert alert-success">PDFs unidos! <a href="${data.download_url}" class="btn btn-success" download="${data.file_name || ''}">Baixar PDF Unificado</a></div>`;
+            } else {
+                resultArea.innerHTML = `<div class="alert alert-danger">${data.message || "Ocorreu um erro."}</div>`;
+            }
+        })
+        .catch(() => { resultArea.innerHTML = `<div class="alert alert-danger">Erro ao unir os arquivos.</div>`; })
+        .finally(() => {
+            convertBtn.disabled = false;
+            resetBtn.disabled = false;
+            setTimeout(() => { progressBarContainer.style.display = 'none'; }, 2000);
+        });
+    }
+});
+</script>
+{% endblock %}

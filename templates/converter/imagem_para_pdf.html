@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Converter Imagem para PDF{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* Estilos consistentes com as outras ferramentas de pré-visualização em grelha */
+    .image-card {
+        position: relative;
+        background-color: #ffffff;
+        border: 1px solid #ced4da;
+        border-radius: .5rem;
+        padding: 0.5rem;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .image-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    }
+    .image-card img {
+        max-width: 100%;
+        max-height: 120px; /* Limita a altura da pré-visualização */
+        height: auto;
+        border-radius: .25rem;
+        margin-bottom: 0.5rem;
+    }
+    .image-controls {
+        font-size: 0.8rem;
+        margin-top: auto;
+        text-align: center;
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light image-to-pdf-section">
+    <div class="container text-center">
+        <div id="uploadArea">
+            <div class="mb-4">
+                <i class="fas fa-file-image text-info fa-4x"></i>
+            </div>
+            <h1 class="fw-bold mb-3" style="font-size:2.5rem;">Converter Imagem para PDF</h1>
+            <p class="mb-2 text-muted" style="font-size:1.2rem;">
+                Converta JPG, PNG, BMP, GIF e TIFF para PDF.
+            </p>
+            <div class="d-flex justify-content-center align-items-center mb-2 gap-2">
+                <button type="button" class="btn btn-lg px-5 py-3 text-white" id="selectFileBtn"
+                    style="background:#17a2b8; border-radius:16px;">
+                    <i class="fas fa-images me-2"></i>Selecionar Imagens
+                </button>
+            </div>
+            <div class="mb-4 text-muted" style="font-size:1rem;">
+                ou <span style="text-decoration:underline;">arraste e solte as imagens aqui</span>
+            </div>
+            <input type="file" id="imageFiles" accept="image/jpeg, image/png, image/gif, image/bmp, image/tiff" multiple style="display:none;">
+        </div>
+
+        <div id="processingArea" class="d-none mt-4">
+            <div id="image-container" class="row g-3 justify-content-center mb-4" style="min-height: 250px; max-height: 60vh; overflow-y: auto; padding: 1rem; border: 1px solid #dee2e6; border-radius: .5rem; background-color: #f8f9fa;">
+                <!-- As pré-visualizações das imagens serão inseridas aqui -->
+            </div>
+            <div class="d-grid gap-2 col-6 mx-auto">
+                <button id="convertBtn" class="btn btn-info btn-lg text-white"><i class="fas fa-file-pdf me-2"></i>Converter para PDF</button>
+                <button id="resetBtn" class="btn btn-secondary btn-lg"><i class="fas fa-plus me-2"></i>Adicionar mais Imagens</button>
+            </div>
+        </div>
+
+        <div class="progress mt-3 mx-auto" style="height: 25px; max-width:500px; display:none;" id="progressBarContainer">
+            <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" id="progressBar" style="width: 0%">0%</div>
+        </div>
+        <div id="resultArea" class="mt-4"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('imageFiles'),
+          selectFileBtn = document.getElementById('selectFileBtn'),
+          convertBtn = document.getElementById('convertBtn'),
+          resetBtn = document.getElementById('resetBtn'),
+          uploadArea = document.getElementById('uploadArea'),
+          processingArea = document.getElementById('processingArea'),
+          imageContainer = document.getElementById('image-container'),
+          progressBarContainer = document.getElementById('progressBarContainer'),
+          progressBar = document.getElementById('progressBar'),
+          resultArea = document.getElementById('resultArea');
+
+    let selectedFiles = [];
+
+    selectFileBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFileChange);
+    resetBtn.addEventListener('click', () => fileInput.click());
+
+    document.body.addEventListener('dragover', (e) => e.preventDefault());
+    document.body.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer.files.length) { handleFileChange({ target: { files: e.dataTransfer.files } }); }
+    });
+
+    convertBtn.addEventListener('click', executeConversion);
+
+    function handleFileChange(event) {
+        const newFiles = Array.from(event.target.files);
+        if (newFiles.length === 0) return;
+
+        newFiles.forEach(file => {
+            if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                selectedFiles.push(file);
+            }
+        });
+
+        uploadArea.classList.add('d-none');
+        processingArea.classList.remove('d-none');
+        renderPreviews();
+    }
+
+    function renderPreviews() {
+        imageContainer.innerHTML = ''; // Limpa as pré-visualizações antigas
+        selectedFiles.forEach(file => {
+            const colDiv = document.createElement('div');
+            colDiv.className = 'col-6 col-md-4 col-lg-3';
+
+            const imageCard = document.createElement('div');
+            imageCard.className = 'image-card';
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imageCard.innerHTML = `
+                    <img src="${e.target.result}" alt="Pré-visualização de ${file.name}">
+                    <div class="image-controls" title="${file.name}">
+                        ${file.name}
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+
+            colDiv.appendChild(imageCard);
+            imageContainer.appendChild(colDiv);
+        });
+    }
+
+    function executeConversion() {
+        if (selectedFiles.length === 0) {
+            alert("Por favor, selecione pelo menos uma imagem.");
+            return;
+        }
+
+        setProcessingState(true);
+
+        const formData = new FormData();
+        selectedFiles.forEach(file => {
+            formData.append('files', file);
+        });
+
+        const url = "{% url 'converter:image_to_pdf' %}";
+
+        fetch(url, {
+            method: "POST",
+            body: formData,
+            headers: { "X-CSRFToken": "{{ csrf_token }}" }
+        })
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(({ ok, data }) => {
+            if (ok && data.success) {
+                showSuccess(data.download_url, data.message);
+            } else {
+                throw new Error(data.message || "Ocorreu um erro desconhecido.");
+            }
+        })
+        .catch(error => { showError(error.message); })
+        .finally(() => { setProcessingState(false); });
+    }
+
+    function setProcessingState(isProcessing) {
+        convertBtn.disabled = isProcessing;
+        resetBtn.disabled = isProcessing;
+        if (isProcessing) {
+            resultArea.innerHTML = '';
+            progressBarContainer.style.display = 'block';
+            updateProgressBar(50, 'A converter...');
+        } else {
+            setTimeout(() => progressBarContainer.style.display = 'none', 2000);
+        }
+    }
+
+    function updateProgressBar(percentage, text = `${percentage}%`) {
+        progressBar.style.width = `${percentage}%`;
+        progressBar.textContent = text;
+    }
+
+    function showSuccess(downloadUrl, message) {
+        updateProgressBar(100, 'Concluído!');
+        resultArea.innerHTML = `<div class="alert alert-success">${message} <a href="${downloadUrl}" class="btn btn-sm btn-success ms-2" download>Baixar PDF</a></div>`;
+    }
+
+    function showError(message) {
+        progressBarContainer.style.display = 'none';
+        resultArea.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+    }
+});
+</script>
+{% endblock %}

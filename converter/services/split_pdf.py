@@ -1,8 +1,5 @@
-# services/split.py (VERSÃO FINAL E CORRIGIDA)
-
 import os
 import io
-import uuid
 import zipfile
 from typing import List, Tuple
 from PyPDF2 import PdfReader, PdfWriter
@@ -15,16 +12,19 @@ def process_split_pdf(
     output_dir: str,
     base_filename: str
 ) -> Tuple[bool, str, str, dict]:
+    
     try:
         input_pdf_reader = PdfReader(io.BytesIO(pdf_file_bytes))
         num_pages = len(input_pdf_reader.pages)
         
+        # Primeiro, aplica todas as rotações necessárias em um PDF temporário em memória
         rotated_writer = PdfWriter()
         for i, page in enumerate(input_pdf_reader.pages):
             if i < len(rotations) and rotations[i] != 0:
                 page.rotate(rotations[i])
             rotated_writer.add_page(page)
         
+        # Cria um novo leitor a partir do PDF rotacionado em memória
         rotated_buffer = io.BytesIO()
         rotated_writer.write(rotated_buffer)
         rotated_buffer.seek(0)
@@ -32,9 +32,10 @@ def process_split_pdf(
 
         selected_indices = [i for i, selected in enumerate(selections) if selected]
 
-        # --- LÓGICA CORRIGIDA ---
+        # --- LÓGICA PARA CADA MODO DE DIVISÃO ---
 
         if split_mode == 'merge':
+            # Une todas as páginas selecionadas em um único arquivo PDF
             if not selected_indices:
                 return (False, "Nenhuma página foi selecionada.", "", {})
             
@@ -51,6 +52,7 @@ def process_split_pdf(
             return True, "Páginas unidas com sucesso!", output_filename, {}
 
         elif split_mode == 'individual':
+            # Cria um arquivo .zip contendo cada página selecionada como um PDF separado
             if not selected_indices:
                 return (False, "Nenhuma página foi selecionada.", "", {})
 
@@ -73,6 +75,7 @@ def process_split_pdf(
             return True, "Páginas extraídas com sucesso!", zip_filename, {}
 
         elif split_mode == 'pairs':
+            # Divide o PDF em arquivos contendo duas páginas cada
             if num_pages < 2:
                 return (False, "O PDF precisa ter pelo menos 2 páginas para ser dividido em pares.", "", {})
 
@@ -98,8 +101,7 @@ def process_split_pdf(
             return True, "PDF dividido em pares com sucesso!", zip_filename, {}
 
         else:
-            # Caso de segurança para um modo de divisão desconhecido
             return False, f"Modo de divisão desconhecido: {split_mode}", "", {}
 
     except Exception as e:
-        return False, f"Ocorreu um erro ao dividir o PDF: {str(e)}", "", {}
+        return False, f"Ocorreu um erro ao processar o PDF: {str(e)}", "", {}

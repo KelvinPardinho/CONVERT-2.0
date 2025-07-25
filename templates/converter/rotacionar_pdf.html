@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Rodar PDF{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* CSS copiado e adaptado do seu 'unir_pdf.html' para consistência visual */
+    .page-card {
+        position: relative;
+        background-color: #ffffff;
+        border: 1px solid #ced4da;
+        border-radius: .5rem;
+        padding: 0.5rem;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .page-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    }
+    .page-card .canvas-wrapper {
+        margin-bottom: 0.5rem;
+        width: 100%;
+        transform-origin: center; /* Garante que a rotação seja suave e no eixo */
+        transition: transform 0.25s ease-in-out;
+    }
+    .page-card canvas {
+        width: 100%;
+        height: auto;
+        border-radius: .25rem;
+    }
+    .page-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        font-size: 0.9rem; /* Tamanho de fonte mais legível */
+        margin-top: auto;
+    }
+    .page-card .page-number {
+        font-weight: 600;
+    }
+    .page-card .rotate-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #6c757d;
+        font-size: 1rem; /* Ícone maior */
+    }
+    .page-card .rotate-btn:hover {
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light">
+    <div class="container">
+        <div class="text-center mb-4">
+            <i class="fas fa-rotate-right text-primary fa-4x mb-3"></i>
+            <h1 class="fw-bold display-5 mb-2">Rodar PDF</h1>
+            <p class="text-muted fs-5">Rode uma ou todas as páginas do seu documento PDF como desejar.</p>
+        </div>
+        
+        <div id="uploadArea" class="text-center">
+            <button type="button" class="btn btn-lg px-5 py-3 text-white" id="selectFileBtn" style="background-color:#0d6efd; border-radius:16px;">
+                <i class="fas fa-file-pdf me-2" aria-hidden="true"></i>Selecionar ficheiro PDF
+            </button>
+            <div class="mt-2 text-muted">ou arraste e solte o PDF aqui</div>
+            <input type="file" id="pdfFile" accept=".pdf" class="d-none">
+        </div>
+
+        <div id="processingArea" class="d-none mt-4">
+            <p class="fs-5 text-center mb-3">Ficheiro: <strong id="fileName" class="text-primary"></strong></p>
+            <div id="page-container" class="row g-4 justify-content-center" style="min-height: 250px; max-height: 60vh; overflow-y: auto; padding: 1rem; border: 1px solid #dee2e6; border-radius: .5rem; background-color: #f8f9fa;">
+                <!-- As pré-visualizações das páginas serão inseridas aqui -->
+            </div>
+            <div class="d-grid gap-2 col-md-6 mx-auto mt-4">
+                <button id="rotateBtn" class="btn btn-primary btn-lg"><i class="fas fa-rotate-right me-2"></i>Aplicar Rotações e Salvar</button>
+                <button id="resetBtn" class="btn btn-secondary btn-lg"><i class="fas fa-times me-2"></i>Escolher outro ficheiro</button>
+            </div>
+        </div>
+        
+        <div id="progressContainer" class="progress mt-4 mx-auto d-none" style="height: 25px; max-width: 500px;">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;">0%</div>
+        </div>
+        <div id="resultArea" class="mt-4 text-center"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        if (typeof pdfjsLib === 'undefined') { throw new Error("PDF.js não carregou"); }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js`;
+
+        const fileInput = document.getElementById('pdfFile');
+        const selectFileBtn = document.getElementById('selectFileBtn');
+        const rotateBtn = document.getElementById('rotateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const uploadArea = document.getElementById('uploadArea');
+        const processingArea = document.getElementById('processingArea');
+        const pageContainer = document.getElementById('page-container');
+        const fileNameSpan = document.getElementById('fileName');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const resultArea = document.getElementById('resultArea');
+        
+        let selectedFile = null;
+
+        selectFileBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+
+        const dropZone = document.body;
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        });
+
+        rotateBtn.addEventListener('click', executeRotation);
+        resetBtn.addEventListener('click', resetUI);
+
+        function handleFileSelect(event) {
+            const file = (event && event.target.files[0]) || fileInput.files[0];
+            if (!file) return;
+
+            selectedFile = file;
+            uploadArea.classList.add('d-none');
+            processingArea.classList.remove('d-none');
+            fileNameSpan.textContent = selectedFile.name;
+            renderAllPages(selectedFile);
+        }
+
+        async function renderAllPages(file) {
+            pageContainer.innerHTML = `<div class="d-flex w-100 justify-content-center align-items-center" style="min-height: 200px;"><div class="spinner-border text-primary" role="status"></div></div>`;
+            const fileReader = new FileReader();
+            fileReader.onload = async (e) => {
+                try {
+                    const pdf = await pdfjsLib.getDocument({ data: e.target.result }).promise;
+                    pageContainer.innerHTML = '';
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        await createPageItem(pdf, i);
+                    }
+                } catch (error) {
+                    alert("Erro ao ler o ficheiro PDF. Pode estar corrompido.");
+                    resetUI();
+                }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        async function createPageItem(pdf, pageNum) {
+            const page = await pdf.getPage(pageNum);
+            const scale = 0.4; // Aumentamos a escala para melhor qualidade visual
+            const viewport = page.getViewport({ scale });
+
+            const colDiv = document.createElement('div');
+            // Usamos a mesma grelha do 'unir_pdf' para consistência visual
+            colDiv.className = 'col-6 col-md-4 col-lg-3 mb-4';
+            colDiv.dataset.pageIndex = pageNum - 1;
+            colDiv.dataset.rotation = 0;
+
+            const pageCard = document.createElement('div');
+            pageCard.className = 'page-card';
+
+            const canvas = document.createElement('canvas');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+
+            pageCard.innerHTML = `
+                <div class="canvas-wrapper"></div>
+                <div class="page-controls">
+                    <span class="page-number">Pág. ${pageNum}</span>
+                    <button class="btn btn-sm rotate-btn"><i class="fas fa-rotate-right"></i></button>
+                </div>
+            `;
+            
+            colDiv.appendChild(pageCard);
+            pageContainer.appendChild(colDiv);
+            pageCard.querySelector('.canvas-wrapper').appendChild(canvas);
+            
+            pageCard.querySelector('.rotate-btn').addEventListener('click', () => rotatePagePreview(pageNum - 1));
+        }
+        
+        function rotatePagePreview(pageIndex) {
+            const colDiv = document.querySelector(`div[data-page-index="${pageIndex}"]`);
+            if (!colDiv) return;
+
+            let currentRotation = parseInt(colDiv.dataset.rotation || '0', 10);
+            const newRotation = (currentRotation + 90) % 360;
+            colDiv.dataset.rotation = newRotation;
+            
+            const wrapper = colDiv.querySelector('.canvas-wrapper');
+            if (wrapper) {
+                wrapper.style.transform = `rotate(${newRotation}deg)`;
+            }
+        }
+
+        function executeRotation() {
+            if (!selectedFile) { alert("Nenhum ficheiro selecionado."); return; }
+            
+            const pageElements = document.querySelectorAll('#page-container > div[data-page-index]');
+            const finalRotations = Array.from(pageElements)
+                .sort((a, b) => parseInt(a.dataset.pageIndex) - parseInt(b.dataset.pageIndex))
+                .map(el => parseInt(el.dataset.rotation || '0', 10));
+
+            setProcessingState(true);
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('rotations', JSON.stringify(finalRotations));
+            const url = "{% url 'converter:rotention_pdf' %}";
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                body: formData
+            })
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                if (ok && data.success) {
+                    showSuccess(data.download_url, data.file_name);
+                } else {
+                    throw new Error(data.message || "Ocorreu um erro desconhecido.");
+                }
+            })
+            .catch(error => showError(error.message))
+            .finally(() => setProcessingState(false));
+        }
+
+        function setProcessingState(isProcessing) {
+            rotateBtn.disabled = isProcessing;
+            resetBtn.disabled = isProcessing;
+            if (isProcessing) {
+                resultArea.innerHTML = '';
+                progressContainer.classList.remove('d-none');
+                updateProgressBar(50, 'A aplicar rotações...');
+            } else {
+                setTimeout(() => progressContainer.classList.add('d-none'), 2000);
+            }
+        }
+
+        function updateProgressBar(percentage, text = `${percentage}%`) {
+            progressBar.style.width = `${percentage}%`;
+            progressBar.textContent = text;
+        }
+
+        function showSuccess(downloadUrl, fileName) {
+            updateProgressBar(100, 'Concluído!');
+            resultArea.innerHTML = `<div class="alert alert-success">PDF rodado com sucesso! <a href="${downloadUrl}" class="btn btn-sm btn-success ms-2" download="${fileName || ''}">Baixar Resultado</a></div>`;
+        }
+
+        function showError(message) {
+            progressContainer.classList.add('d-none');
+            resultArea.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+        }
+
+        function resetUI() {
+            fileInput.value = '';
+            selectedFile = null;
+            uploadArea.classList.remove('d-none');
+            processingArea.classList.add('d-none');
+            pageContainer.innerHTML = '';
+            resultArea.innerHTML = '';
+            progressContainer.classList.add('d-none');
+        }
+    } catch (error) {
+        console.error("Erro fatal na inicialização do script:", error);
+    }
+});
+</script>
+{% endblock %}

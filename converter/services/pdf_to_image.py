@@ -1,5 +1,3 @@
-# services/pdf_to_image.py (VERSÃO CORRIGIDA E PADRONIZADA)
-
 import os
 import io
 import uuid

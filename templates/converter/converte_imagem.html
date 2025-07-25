@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% block title %}Converter Formato de Imagem{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* Layout principal da ferramenta com flexbox */
+    .tool-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 2rem;
+        flex-wrap: wrap; /* Permite que quebre a linha em ecrãs pequenos */
+    }
+
+    /* Área da esquerda para a pré-visualização */
+    .preview-area {
+        flex: 1 1 500px; /* Base de 500px, pode crescer e encolher */
+        max-width: 500px;
+    }
+    
+    /* Área da direita para as opções */
+    .options-area {
+        flex: 1 1 300px; /* Base de 300px */
+        max-width: 400px;
+    }
+
+    .preview-card {
+        background-color: #ffffff;
+        border: 1px solid #ced4da;
+        border-radius: .5rem;
+        padding: 1rem;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 350px;
+        height: 400px;
+    }
+
+    /* ========================================================== */
+    /* CORREÇÃO DEFINITIVA E À PROVA DE BALAS AQUI                 */
+    /* ========================================================== */
+    #processingArea .preview-card img {
+        display: block !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        width: auto !important;
+        height: auto !important;
+        object-fit: contain !important; /* A propriedade mágica */
+        transition: transform 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light convert-image-section">
+    <div class="container">
+        <div class="text-center mb-4">
+            <i class="fas fa-exchange-alt text-secondary fa-4x mb-3"></i>
+            <h1 class="fw-bold display-5 mb-2">Converter Imagem</h1>
+            <p class="text-muted fs-5">Altere o formato de qualquer imagem de forma rápida e fácil.</p>
+        </div>
+        
+        <div id="uploadArea" class="text-center">
+            <button type="button" class="btn btn-lg px-5 py-3 text-white" id="selectFileBtn" style="background-color:#aaaaaa; border-color:#aaaaaa; border-radius:16px;">
+                <i class="fas fa-images me-2" aria-hidden="true"></i>Selecionar Imagem
+            </button>
+            <div class="mt-2 text-muted">ou arraste e solte a imagem aqui</div>
+            <input type="file" id="imageFile" accept="image/jpeg, image/png, image/gif, image/bmp, image/tiff, image/webp" style="display:none;">
+        </div>
+
+        <div id="processingArea" class="d-none mt-4">
+            <p class="fs-5 text-center mb-3">Ficheiro: <strong id="fileName" class="text-dark"></strong></p>
+            
+            <!-- NOVA ESTRUTURA HTML COM FLEXBOX -->
+            <div class="tool-wrapper">
+                <div class="preview-area">
+                    <div id="preview-container">
+                        <!-- A pré-visualização da imagem aparecerá aqui -->
+                    </div>
+                </div>
+                <div class="options-area">
+                    <div class="card text-start mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Opções de Conversão</h5>
+                            <div class="mb-3">
+                                <label for="targetFormat" class="form-label">Converter para:</label>
+                                <select class="form-select" id="targetFormat"></select>
+                            </div>
+                            <button id="rotateBtn" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-rotate-right me-2"></i>Rotacionar Imagem
+                            </button>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button id="convertBtn" class="btn btn-success btn-lg"><i class="fas fa-exchange-alt me-2" aria-hidden="true"></i>Converter Imagem</button>
+                        <button id="resetBtn" class="btn btn-outline-secondary btn-lg"><i class="fas fa-times me-2" aria-hidden="true"></i>Escolher outra Imagem</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="progressContainer" class="progress mt-4 mx-auto d-none" style="height: 25px; max-width: 500px;">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-warning text-dark" role="progressbar" style="width: 0%;">0%</div>
+        </div>
+        <div id="resultArea" class="mt-4 text-center"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// O JavaScript já está correto e não precisa de alterações.
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        const fileInput = document.getElementById('imageFile'),
+              selectFileBtn = document.getElementById('selectFileBtn'),
+              convertBtn = document.getElementById('convertBtn'),
+              resetBtn = document.getElementById('resetBtn'),
+              uploadArea = document.getElementById('uploadArea'),
+              processingArea = document.getElementById('processingArea'),
+              previewContainer = document.getElementById('preview-container'),
+              fileNameSpan = document.getElementById('fileName'),
+              targetFormatSelect = document.getElementById('targetFormat'),
+              rotateBtn = document.getElementById('rotateBtn'),
+              progressContainer = document.getElementById('progressContainer'),
+              progressBar = document.getElementById('progressBar'),
+              resultArea = document.getElementById('resultArea');
+        
+        let selectedFile = null,
+            rotationAngle = 0;
+
+        selectFileBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        const dropZone = document.body;
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; handleFileSelect(); }
+        });
+
+        convertBtn.addEventListener('click', executeConversion);
+        resetBtn.addEventListener('click', resetUI);
+        rotateBtn.addEventListener('click', () => rotatePreview(false));
+
+        function handleFileSelect(event) {
+            const file = (event && event.target.files[0]) || fileInput.files[0];
+            if (!file || !file.type.startsWith('image/')) {
+                alert("Por favor, selecione um ficheiro de imagem válido.");
+                return;
+            }
+            selectedFile = file;
+            uploadArea.classList.add('d-none');
+            processingArea.classList.remove('d-none');
+            fileNameSpan.textContent = selectedFile.name;
+            renderImagePreview(selectedFile);
+            populateFormatOptions(selectedFile.type);
+        }
+
+        function renderImagePreview(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewContainer.innerHTML = `
+                    <div class="preview-card">
+                        <img src="${e.target.result}" alt="Pré-visualização" id="imagePreview">
+                    </div>
+                `;
+                rotatePreview(true);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function populateFormatOptions(mimeType) {
+            const originalFormat = mimeType.split('/')[1].toUpperCase().replace('JPEG', 'JPG');
+            const availableFormats = ['PNG', 'JPG', 'WEBP', 'BMP', 'TIFF', 'GIF'];
+            targetFormatSelect.innerHTML = '';
+            availableFormats.forEach(format => {
+                if (format !== originalFormat) {
+                    const option = document.createElement('option');
+                    option.value = format.toLowerCase();
+                    option.textContent = format;
+                    targetFormatSelect.appendChild(option);
+                }
+            });
+        }
+
+        function rotatePreview(applyOnly = false) {
+            if (!applyOnly) {
+                rotationAngle = (rotationAngle + 90) % 360;
+            }
+            const img = document.getElementById('imagePreview');
+            if (img) {
+                img.style.transform = `rotate(${rotationAngle}deg)`;
+            }
+        }
+
+        function executeConversion() {
+            if (!selectedFile) { alert("Por favor, selecione uma imagem."); return; }
+            setProcessingState(true);
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('target_format', targetFormatSelect.value);
+            formData.append('rotation', rotationAngle);
+            const url = "{% url 'converter:convert_image' %}";
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) { return response.json().then(err => { throw new Error(err.message || "Erro no servidor") }); }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showSuccess(data.download_url, data.file_name);
+                } else {
+                    throw new Error(data.message || "Ocorreu um erro desconhecido.");
+                }
+            })
+            .catch(error => { showError(error.message); })
+            .finally(() => { setProcessingState(false); });
+        }
+
+        function setProcessingState(isProcessing) {
+            convertBtn.disabled = isProcessing; resetBtn.disabled = isProcessing;
+            if (isProcessing) {
+                resultArea.innerHTML = '';
+                progressContainer.classList.remove('d-none');
+                updateProgressBar(50, 'A converter...');
+            } else { setTimeout(() => progressContainer.classList.add('d-none'), 2000); }
+        }
+        function updateProgressBar(percentage, text = `${percentage}%`) {
+            progressBar.style.width = `${percentage}%`; progressBar.textContent = text;
+        }
+        function showSuccess(downloadUrl, fileName) {
+            updateProgressBar(100, 'Concluído!');
+            resultArea.innerHTML = `<div class="alert alert-success">Imagem convertida! <a href="${downloadUrl}" class="btn btn-sm btn-success ms-2" download="${fileName || ''}">Baixar Resultado</a></div>`;
+        }
+        function showError(message) {
+            progressContainer.classList.add('d-none');
+            resultArea.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+        }
+        function resetUI() {
+            fileInput.value = ''; selectedFile = null; rotationAngle = 0;
+            uploadArea.classList.remove('d-none');
+            processingArea.classList.add('d-none');
+            previewContainer.innerHTML = '';
+            resultArea.innerHTML = '';
+            progressContainer.classList.add('d-none');
+        }
+    } catch (error) {
+        console.error("Erro fatal na inicialização do script:", error);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block title %}Converter PDF para Imagem{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* Estilos consistentes com a ferramenta de Dividir PDF */
+    .page-card {
+        position: relative; background-color: #ffffff; border: 1px solid #ced4da;
+        border-radius: .5rem; padding: 0.5rem; width: 100%; height: 100%;
+        display: flex; flex-direction: column; align-items: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .page-card:hover { transform: translateY(-4px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12); }
+    .page-card .canvas-wrapper { margin-bottom: 0.5rem; transition: transform 0.3s ease; width: 100%; }
+    .page-card canvas { width: 100%; height: auto; border-radius: .25rem; }
+    .page-controls { display: flex; justify-content: space-between; align-items: center; width: 100%; font-size: 0.8rem; margin-top: auto; }
+    .page-card .page-number { font-weight: 600; }
+    .page-card .rotate-btn { background: none; border: none; cursor: pointer; color: #6c757d; }
+    .page-card .rotate-btn:hover { color: #b9b600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light pdf-to-image-section">
+    <div class="container">
+        <div class="text-center mb-4">
+            <i class="fas fa-image fa-4x text-warning mb-3"></i>
+            <h1 class="fw-bold display-5 mb-2">Converter PDF para Imagem</h1>
+            <p class="text-muted fs-5">Extraia todas as páginas do seu PDF como imagens de alta qualidade.</p>
+        </div>
+        
+        <div id="uploadArea" class="text-center">
+            <button type="button" class="btn btn-lg px-5 py-3 text-white" id="selectFileBtn" style="background-color:#b9b600; border-radius:16px;">
+                <i class="fas fa-file-pdf me-2" aria-hidden="true"></i>Selecionar ficheiro PDF
+            </button>
+            <div class="mt-2 text-muted">ou arraste e solte o PDF aqui</div>
+            <input type="file" id="pdfFile" accept=".pdf" class="d-none">
+        </div>
+
+        <div id="processingArea" class="d-none mt-4">
+            <p class="fs-5 text-center mb-3">Ficheiro: <strong id="fileName" class="text-warning"></strong></p>
+            <div class="row g-lg-4">
+                <div class="col-lg-8">
+                    <div id="page-container" class="row g-3">
+                        <!-- As colunas com as páginas serão inseridas aqui pelo JS -->
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card text-start mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Opções de Formato</h5>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="imageFormat" id="formatPNG" value="png" checked>
+                                <label class="form-check-label" for="formatPNG">
+                                    <strong>PNG</strong> <small class="d-block text-muted">Melhor qualidade, ideal para gráficos e texto.</small>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="imageFormat" id="formatJPG" value="jpg">
+                                <label class="form-check-label" for="formatJPG">
+                                    <strong>JPG</strong> <small class="d-block text-muted">Ficheiro menor, ideal para fotografias.</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button id="convertBtn" class="btn btn-warning btn-lg"><i class="fas fa-images me-2" aria-hidden="true"></i>Converter para Imagens</button>
+                        <button id="resetBtn" class="btn btn-secondary btn-lg"><i class="fas fa-times me-2" aria-hidden="true"></i>Escolher outro ficheiro</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="progressContainer" class="progress mt-4 mx-auto d-none" style="height: 25px; max-width: 500px;">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;">0%</div>
+        </div>
+        <div id="resultArea" class="mt-4 text-center"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        if (typeof pdfjsLib === 'undefined') { throw new Error("PDF.js não carregou"); }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js`;
+
+        const fileInput = document.getElementById('pdfFile'),
+              selectFileBtn = document.getElementById('selectFileBtn'),
+              convertBtn = document.getElementById('convertBtn'),
+              resetBtn = document.getElementById('resetBtn'),
+              uploadArea = document.getElementById('uploadArea'),
+              processingArea = document.getElementById('processingArea'),
+              pageContainer = document.getElementById('page-container'),
+              fileNameSpan = document.getElementById('fileName'),
+              progressContainer = document.getElementById('progressContainer'),
+              progressBar = document.getElementById('progressBar'),
+              resultArea = document.getElementById('resultArea');
+        
+        let selectedFile = null;
+        let pageRotations = []; // Array para guardar as rotações de cada página
+
+        selectFileBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        const dropZone = document.body;
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; handleFileSelect(); }
+        });
+
+        convertBtn.addEventListener('click', executeConversion);
+        resetBtn.addEventListener('click', resetUI);
+
+        function handleFileSelect(event) {
+            const file = (event && event.target.files[0]) || fileInput.files[0];
+            if (!file) return;
+            selectedFile = file;
+            uploadArea.classList.add('d-none');
+            processingArea.classList.remove('d-none');
+            fileNameSpan.textContent = selectedFile.name;
+            renderAllPages(selectedFile);
+        }
+
+        async function renderAllPages(file) {
+            pageContainer.innerHTML = `<div class="d-flex w-100 justify-content-center align-items-center" style="min-height: 200px;"><div class="spinner-border text-primary" role="status"></div></div>`;
+            const fileReader = new FileReader();
+            fileReader.onload = async (e) => {
+                try {
+                    const pdf = await pdfjsLib.getDocument({ data: e.target.result }).promise;
+                    pageContainer.innerHTML = '';
+                    pageRotations = Array(pdf.numPages).fill(0);
+                    const promises = Array.from({ length: pdf.numPages }, (_, i) => createPageItem(pdf, i + 1));
+                    await Promise.all(promises);
+                } catch (error) { alert("Erro ao ler o ficheiro PDF."); resetUI(); }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        async function createPageItem(pdf, pageNum) {
+            const page = await pdf.getPage(pageNum),
+                  scale = 0.3,
+                  viewport = page.getViewport({ scale }),
+                  colDiv = document.createElement('div');
+            colDiv.className = 'col-6 col-md-4 col-lg-3 mb-4';
+            colDiv.dataset.pageIndex = pageNum - 1;
+            const pageCard = document.createElement('div');
+            pageCard.className = 'page-card';
+            const canvas = document.createElement('canvas');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            pageCard.innerHTML = `
+                <div class="canvas-wrapper"></div>
+                <div class="page-controls">
+                    <span class="page-number">Pág. ${pageNum}</span>
+                    <button class="btn btn-sm rotate-btn"><i class="fas fa-rotate-right"></i></button>
+                </div>`;
+            colDiv.appendChild(pageCard);
+            pageContainer.appendChild(colDiv);
+            pageCard.querySelector('.canvas-wrapper').appendChild(canvas);
+            pageCard.querySelector('.rotate-btn').addEventListener('click', () => rotatePagePreview(pageNum - 1));
+        }
+        
+        function rotatePagePreview(pageIndex) {
+            pageRotations[pageIndex] = (pageRotations[pageIndex] + 90) % 360;
+            const wrapper = document.querySelector(`div[data-page-index="${pageIndex}"] .canvas-wrapper`);
+            if (wrapper) wrapper.style.transform = `rotate(${pageRotations[pageIndex]}deg)`;
+        }
+
+        function executeConversion() {
+            if (!selectedFile) { alert("Por favor, selecione um ficheiro."); return; }
+            setProcessingState(true);
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('image_format', document.querySelector('input[name="imageFormat"]:checked').value);
+            formData.append('rotations', JSON.stringify(pageRotations));
+
+            const url = "{% url 'converter:pdf_to_image' %}";
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                body: formData
+            })
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                if (ok && data.success) {
+                    showSuccess(data.download_zip, data.message);
+                } else {
+                    throw new Error(data.message || "Ocorreu um erro desconhecido.");
+                }
+            })
+            .catch(error => { showError(error.message); })
+            .finally(() => { setProcessingState(false); });
+        }
+
+        function setProcessingState(isProcessing) {
+            convertBtn.disabled = isProcessing; resetBtn.disabled = isProcessing;
+            if (isProcessing) {
+                resultArea.innerHTML = '';
+                progressContainer.classList.remove('d-none');
+                updateProgressBar(50, 'A converter...');
+            } else { setTimeout(() => progressContainer.classList.add('d-none'), 2000); }
+        }
+        function updateProgressBar(percentage, text = `${percentage}%`) {
+            progressBar.style.width = `${percentage}%`; progressBar.textContent = text;
+        }
+        function showSuccess(downloadUrl, message) {
+            updateProgressBar(100, 'Concluído!');
+            // A resposta para esta ferramenta é um .zip
+            resultArea.innerHTML = `<div class="alert alert-success">${message} <a href="${downloadUrl}" class="btn btn-sm btn-success ms-2" download>Baixar ZIP</a></div>`;
+        }
+        function showError(message) {
+            progressContainer.classList.add('d-none');
+            resultArea.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+        }
+        function resetUI() {
+            fileInput.value = ''; selectedFile = null; pageRotations = [];
+            uploadArea.classList.remove('d-none'); processingArea.classList.add('d-none');
+            pageContainer.innerHTML = '';
+            resultArea.innerHTML = '';
+            progressContainer.classList.add('d-none');
+        }
+    } catch (error) {
+        console.error("Erro fatal na inicialização do script:", error);
+    }
+});
+</script>
+{% endblock %}

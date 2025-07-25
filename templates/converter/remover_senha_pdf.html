@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Remover Senha de PDF{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* Estilos consistentes com as outras ferramentas */
+    .preview-card {
+        background-color: #ffffff;
+        border: 1px solid #ced4da;
+        border-radius: .5rem;
+        padding: 1rem;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 200px; /* Altura mínima para o spinner */
+    }
+    .preview-card canvas {
+        width: 100%;
+        height: auto;
+        border-radius: .25rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .preview-card .encrypted-icon {
+        font-size: 4rem;
+        color: #6c757d;
+        margin: auto; /* Centraliza o ícone verticalmente */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light unlock-pdf-section">
+    <div class="container">
+        <div class="text-center mb-4">
+            <i class="fas fa-unlock text-info fa-4x mb-3"></i>
+            <h1 class="fw-bold display-5 mb-2">Remover Senha de PDF</h1>
+            <p class="text-muted fs-5">Desbloqueie os seus ficheiros PDF protegidos por senha de forma rápida e segura.</p>
+        </div>
+        
+        <div id="uploadArea" class="text-center">
+            <button type="button" class="btn btn-lg px-5 py-3 text-white" id="selectFileBtn" style="background-color:#17a2b8; border-radius:16px;">
+                <i class="fas fa-file-pdf me-2" aria-hidden="true"></i>Selecionar ficheiro PDF
+            </button>
+            <div class="mt-2 text-muted">ou arraste e solte o PDF aqui</div>
+            <input type="file" id="pdfFile" accept=".pdf" class="d-none">
+        </div>
+
+        <div id="processingArea" class="d-none mt-4">
+            <p class="fs-5 text-center mb-3">Ficheiro: <strong id="fileName" class="text-info"></strong></p>
+            <div class="row g-lg-4 justify-content-center">
+                <div class="col-lg-7">
+                    <!-- A pré-visualização irá mostrar um ícone de cadeado -->
+                    <div id="preview-container"></div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="card text-start mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Desbloquear Ficheiro</h5>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Digite a senha atual do PDF</label>
+                                <input type="password" class="form-control" id="password" required>
+                                <div class="form-text">A sua senha é necessária para desbloquear o ficheiro. Nós não a guardamos.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button id="unlockBtn" class="btn btn-info btn-lg text-white"><i class="fas fa-unlock me-2" aria-hidden="true"></i>Remover Senha</button>
+                        <button id="resetBtn" class="btn btn-secondary btn-lg"><i class="fas fa-times me-2" aria-hidden="true"></i>Escolher outro ficheiro</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="progressContainer" class="progress mt-4 mx-auto d-none" style="height: 25px; max-width: 500px;">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%;">0%</div>
+        </div>
+        <div id="resultArea" class="mt-4 text-center"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        if (typeof pdfjsLib === 'undefined') { throw new Error("PDF.js não carregou"); }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js`;
+
+        const fileInput = document.getElementById('pdfFile'),
+              selectFileBtn = document.getElementById('selectFileBtn'),
+              unlockBtn = document.getElementById('unlockBtn'),
+              resetBtn = document.getElementById('resetBtn'),
+              uploadArea = document.getElementById('uploadArea'),
+              processingArea = document.getElementById('processingArea'),
+              previewContainer = document.getElementById('preview-container'),
+              fileNameSpan = document.getElementById('fileName'),
+              passwordInput = document.getElementById('password'),
+              progressContainer = document.getElementById('progressContainer'),
+              progressBar = document.getElementById('progressBar'),
+              resultArea = document.getElementById('resultArea');
+        
+        let selectedFile = null;
+
+        selectFileBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        const dropZone = document.body;
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; handleFileSelect(); }
+        });
+
+        unlockBtn.addEventListener('click', executeUnlock);
+        resetBtn.addEventListener('click', resetUI);
+
+        function handleFileSelect(event) {
+            const file = (event && event.target.files[0]) || fileInput.files[0];
+            if (!file) return;
+            selectedFile = file;
+            uploadArea.classList.add('d-none');
+            processingArea.classList.remove('d-none');
+            fileNameSpan.textContent = selectedFile.name;
+            renderEncryptedPreview();
+        }
+
+        function renderEncryptedPreview() {
+            // Para ficheiros encriptados, a pré-visualização geralmente falha.
+            // Em vez disso, mostramos um ícone para indicar que o ficheiro está protegido.
+            previewContainer.innerHTML = `
+                <div class="preview-card">
+                    <i class="fas fa-lock encrypted-icon"></i>
+                    <p class="text-muted mt-3">Este ficheiro parece estar protegido por senha.</p>
+                </div>
+            `;
+        }
+
+        function executeUnlock() {
+            if (!selectedFile) {
+                alert("Por favor, selecione um ficheiro.");
+                return;
+            }
+            if (!passwordInput.value) {
+                alert("Por favor, digite a senha do ficheiro.");
+                return;
+            }
+
+            setProcessingState(true);
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('password', passwordInput.value);
+
+            // A URL DEVE CORRESPONDER À SUA URL NO DJANGO
+            const url = "{% url 'converter:unlock_pdf' %}";
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                body: formData
+            })
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                if (ok && data.success) {
+                    showSuccess(data.download_url, data.file_name);
+                } else {
+                    // O erro de "senha incorreta" é comum aqui, então damos uma mensagem específica
+                    if (data.message && data.message.toLowerCase().includes('password')) {
+                         throw new Error("Senha incorreta. Por favor, tente novamente.");
+                    }
+                    throw new Error(data.message || "Ocorreu um erro desconhecido.");
+                }
+            })
+            .catch(error => { showError(error.message); })
+            .finally(() => { setProcessingState(false); });
+        }
+
+        function setProcessingState(isProcessing) {
+            unlockBtn.disabled = isProcessing;
+            resetBtn.disabled = isProcessing;
+            if (isProcessing) {
+                resultArea.innerHTML = '';
+                progressContainer.classList.remove('d-none');
+                updateProgressBar(50, 'A desbloquear...');
+            } else {
+                setTimeout(() => progressContainer.classList.add('d-none'), 2000);
+            }
+        }
+        function updateProgressBar(percentage, text = `${percentage}%`) {
+            progressBar.style.width = `${percentage}%`;
+            progressBar.textContent = text;
+        }
+        function showSuccess(downloadUrl, fileName) {
+            updateProgressBar(100, 'Concluído!');
+            resultArea.innerHTML = `<div class="alert alert-success">Ficheiro desbloqueado! <a href="${downloadUrl}" class="btn btn-sm btn-success ms-2" download="${fileName || ''}">Baixar Resultado</a></div>`;
+        }
+        function showError(message) {
+            progressContainer.classList.add('d-none');
+            resultArea.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+        }
+        function resetUI() {
+            fileInput.value = '';
+            selectedFile = null;
+            passwordInput.value = '';
+            uploadArea.classList.remove('d-none');
+            processingArea.classList.add('d-none');
+            previewContainer.innerHTML = '';
+            resultArea.innerHTML = '';
+            progressContainer.classList.add('d-none');
+        }
+    } catch (error) {
+        console.error("Erro fatal na inicialização do script:", error);
+    }
+});
+</script>
+{% endblock %}

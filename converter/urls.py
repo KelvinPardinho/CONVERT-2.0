@@ -4,9 +4,22 @@ from . import views
 app_name = 'converter'
 
 urlpatterns = [
+    # Paginas
     path('', views.home, name='home'),
     path('ferramentas/', views.index, name='converter_index'),
     path('assinar/', views.sign_index, name='sign_index'),
+    path('pdf-para-word/', views.pdf_para_word_page, name='pdf_para_word_page'),
+    path('pdf-para-excel/', views.pdf_para_excel_page, name='pdf_para_excel_page'),
+    path('unir_pdf/', views.unir_pdf_page, name='unir_pdf_page'),
+    path('dividir_pdf/', views.dividir_pdf_page, name='dividir_pdf_page'),
+    path('comprimir_pdf/', views.comprimir_pdf_page, name='comprimir_pdf_page'),
+    path('proteger_pdf/', views.proteger_pdf_page, name='proteger_pdf_page'),
+    path('remover_senha_pdf/', views.remover_senha_pdf_page, name='remover_senha_pdf_page'),
+    path('pdf_para_imagem/', views.pdf_para_imagem_page, name='pdf_para_imagem_page'),
+    path('imagem_para_pdf/', views.imagem_para_pdf_page, name='imagem_para_pdf_page'),
+    path('converte_imagem/', views.converte_imagem_page, name='converte_imagem_page'),
+    path('rotacionar_pdf/', views.rotacionar_pdf_page, name='rotacionar_pdf_page'),
+    path('numerar_pagina/', views.numerar_pagina_page, name='numerar_pagina_page'),
 
     # API Endpoints
     path('api/sign_pdf', views.sign_pdf, name='sign_pdf'),
@@ -21,6 +34,8 @@ urlpatterns = [
     path('api/pdf-to-word/', views.pdf_to_word, name='pdf_to_word'),
     path('api/pdf-to-excel/', views.pdf_to_excel, name='pdf_to_excel'),
     path('api/pdf-to-image/', views.pdf_to_image, name='pdf_to_image'),
+    path('api/rotention-pdf/', views.rodar_pdf, name='rotention_pdf'),
+    path('api/number-page/', views.number_page, name='number_page'),
     
     path('download/converted/<str:filename>/', views.download_converted, name='download_converted'),
 ]

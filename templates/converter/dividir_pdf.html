@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}Dividir PDF{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* O CSS está correto e não precisa de alterações. */
+    .page-card { position: relative; background-color: #ffffff; border: 1px solid #ced4da; border-radius: .5rem; padding: 0.5rem; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; transition: transform 0.2s, box-shadow 0.2s; }
+    .page-card:hover { transform: translateY(-4px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12); }
+    .page-card .canvas-wrapper { margin-bottom: 0.5rem; transition: transform 0.3s ease; width: 100%; }
+    .page-card canvas { width: 100%; height: auto; border-radius: .25rem; }
+    .page-controls { display: flex; justify-content: space-between; align-items: center; width: 100%; font-size: 0.8rem; margin-top: auto; }
+    .page-card .page-number { font-weight: 600; }
+    .page-card .rotate-btn { background: none; border: none; cursor: pointer; color: #6c757d; }
+    .page-card .rotate-btn:hover { color: #00701c; }
+    .page-card .page-selection-checkbox-wrapper { position: absolute; top: 8px; left: 8px; z-index: 10; }
+    .page-card .page-selection-checkbox { transform: scale(1.5); cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-4 bg-light split-pdf-section">
+    <div class="container">
+        <div class="text-center mb-4">
+            <i class="fas fa-cut text-success fa-4x"></i>
+            <h1 class="fw-bold display-5 mb-2">Dividir PDF</h1>
+            <p class="text-muted fs-5">Selecione, rotacione e extraia páginas de um PDF com total controlo.</p>
+        </div>
+        <div id="uploadArea" class="text-center">
+            <button type="button" class="btn btn-lg px-5 py-3 text-white" id="selectFileBtn" style="background-color:#00701c; border-radius:16px;">
+                <i class="fas fa-file-pdf me-2" aria-hidden="true"></i>Selecionar ficheiro PDF
+            </button>
+            <div class="mt-2 text-muted">ou arraste e solte o PDF aqui</div>
+            <input type="file" id="pdfFile" accept=".pdf" class="d-none">
+        </div>
+        <div id="processingArea" class="d-none mt-4">
+            <p class="fs-5 text-center mb-3">Ficheiro: <strong id="fileName" class="text-success"></strong></p>
+            <div class="row g-lg-4">
+                <div class="col-lg-8">
+                    <div id="selectionControls" class="d-none text-start mb-2">
+                        <button class="btn btn-sm btn-outline-primary" id="selectAllBtn">Selecionar Todas</button>
+                        <button class="btn btn-sm btn-outline-secondary ms-2" id="deselectAllBtn">Limpar Seleção</button>
+                    </div>
+                    <div id="page-container" class="row g-3"></div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card text-start mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Modo de Divisão</h5>
+                            <div class="form-check mb-2"><input class="form-check-input" type="radio" name="splitMode" id="modeMerge" value="merge" checked><label class="form-check-label" for="modeMerge">Unir páginas selecionadas num PDF</label></div>
+                            <div class="form-check mb-2"><input class="form-check-input" type="radio" name="splitMode" id="modeIndividual" value="individual"><label class="form-check-label" for="modeIndividual">Extrair páginas individualmente (.zip)</label></div>
+                            <div class="form-check"><input class="form-check-input" type="radio" name="splitMode" id="modePairs" value="pairs"><label class="form-check-label" for="modePairs">Dividir em páginas pares (ignora seleção)</label></div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button id="splitBtn" class="btn btn-success btn-lg"><i class="fas fa-cut me-2" aria-hidden="true"></i>Dividir PDF</button>
+                        <button id="resetBtn" class="btn btn-secondary btn-lg"><i class="fas fa-times me-2" aria-hidden="true"></i>Escolher outro ficheiro</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="progressContainer" class="progress mt-4 mx-auto d-none" style="height: 25px; max-width: 500px;">
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;">0%</div>
+        </div>
+        <div id="resultArea" class="mt-4 text-center"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        if (typeof pdfjsLib === 'undefined') { throw new Error("PDF.js não carregou"); }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js`;
+
+        const fileInput = document.getElementById('pdfFile'),
+              selectFileBtn = document.getElementById('selectFileBtn'),
+              splitBtn = document.getElementById('splitBtn'),
+              resetBtn = document.getElementById('resetBtn'),
+              uploadArea = document.getElementById('uploadArea'),
+              processingArea = document.getElementById('processingArea'),
+              pageContainer = document.getElementById('page-container'),
+              fileNameSpan = document.getElementById('fileName'),
+              selectionControls = document.getElementById('selectionControls'),
+              selectAllBtn = document.getElementById('selectAllBtn'),
+              deselectAllBtn = document.getElementById('deselectAllBtn'),
+              splitModeRadios = document.querySelectorAll('input[name="splitMode"]'),
+              progressContainer = document.getElementById('progressContainer'),
+              progressBar = document.getElementById('progressBar'),
+              resultArea = document.getElementById('resultArea');
+        
+        let selectedFile = null,
+            pageStates = { selections: [], rotations: [] };
+
+        selectFileBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        const dropZone = document.body;
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; handleFileSelect(); }
+        });
+
+        splitBtn.addEventListener('click', executeSplit);
+        resetBtn.addEventListener('click', resetUI);
+        selectAllBtn.addEventListener('click', () => toggleAllSelections(true));
+        deselectAllBtn.addEventListener('click', () => toggleAllSelections(false));
+        splitModeRadios.forEach(radio => radio.addEventListener('change', handleSplitModeChange));
+
+        function handleFileSelect(event) {
+            const file = (event && event.target.files[0]) || fileInput.files[0];
+            if (!file) return;
+            selectedFile = file;
+            uploadArea.classList.add('d-none');
+            processingArea.classList.remove('d-none');
+            fileNameSpan.textContent = selectedFile.name;
+            renderAllPages(selectedFile);
+        }
+
+        async function renderAllPages(file) {
+            pageContainer.innerHTML = `<div class="d-flex w-100 justify-content-center align-items-center" style="min-height: 200px;"><div class="spinner-border text-success" role="status"></div></div>`;
+            const fileReader = new FileReader();
+            fileReader.onload = async (e) => {
+                try {
+                    const pdf = await pdfjsLib.getDocument({ data: e.target.result }).promise;
+                    pageContainer.innerHTML = '';
+                    pageStates = { selections: Array(pdf.numPages).fill(false), rotations: Array(pdf.numPages).fill(0) };
+                    for (let i = 1; i <= pdf.numPages; i++) { await createPageItem(pdf, i); }
+                    selectionControls.classList.remove('d-none');
+                    handleSplitModeChange();
+                } catch (error) { alert("Erro ao ler o ficheiro PDF."); resetUI(); }
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        async function createPageItem(pdf, pageNum) {
+            const page = await pdf.getPage(pageNum),
+                  scale = 0.3,
+                  viewport = page.getViewport({ scale }),
+                  colDiv = document.createElement('div');
+            colDiv.className = 'col-6 col-md-4 col-lg-3 mb-4';
+            colDiv.dataset.pageIndex = pageNum - 1;
+            const pageCard = document.createElement('div');
+            pageCard.className = 'page-card';
+            const canvas = document.createElement('canvas');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            pageCard.innerHTML = `
+                <div class="page-selection-checkbox-wrapper"><input class="form-check-input page-selection-checkbox" type="checkbox"></div>
+                <div class="canvas-wrapper"></div>
+                <div class="page-controls">
+                    <span class="page-number">Pág. ${pageNum}</span>
+                    <button class="btn btn-sm rotate-btn"><i class="fas fa-rotate-right"></i></button>
+                </div>`;
+            colDiv.appendChild(pageCard);
+            pageContainer.appendChild(colDiv);
+            pageCard.querySelector('.canvas-wrapper').appendChild(canvas);
+            pageCard.querySelector('.page-selection-checkbox').addEventListener('change', (e) => togglePageSelection(pageNum - 1, e.target.checked));
+            pageCard.querySelector('.rotate-btn').addEventListener('click', () => rotatePagePreview(pageNum - 1));
+        }
+        
+        function handleSplitModeChange() {
+            const selectedMode = document.querySelector('input[name="splitMode"]:checked').value,
+                  showSelectionUI = selectedMode !== 'pairs';
+            document.querySelectorAll('.page-selection-checkbox-wrapper').forEach(el => el.style.display = showSelectionUI ? 'block' : 'none');
+            document.getElementById('selectionControls').style.display = showSelectionUI ? 'block' : 'none';
+        }
+
+        function togglePageSelection(pageIndex, isChecked) {
+            pageStates.selections[pageIndex] = isChecked;
+            document.getElementById('selectAllPages').checked = pageStates.selections.every(s => s);
+        }
+
+        function toggleAllSelections(isChecked) {
+            document.querySelectorAll('.page-selection-checkbox').forEach((checkbox, index) => {
+                checkbox.checked = isChecked;
+                pageStates.selections[index] = isChecked;
+            });
+        }
+
+        function rotatePagePreview(pageIndex) {
+            pageStates.rotations[pageIndex] = (pageStates.rotations[pageIndex] + 90) % 360;
+            const wrapper = document.querySelector(`div[data-page-index="${pageIndex}"] .canvas-wrapper`);
+            if (wrapper) wrapper.style.transform = `rotate(${pageStates.rotations[pageIndex]}deg)`;
+        }
+
+        function executeSplit() {
+            const splitMode = document.querySelector('input[name="splitMode"]:checked').value;
+            if (splitMode !== 'pairs' && !pageStates.selections.some(s => s)) {
+                alert("Por favor, selecione pelo menos uma página.");
+                return;
+            }
+            setProcessingState(true);
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('split_mode', splitMode);
+            formData.append('selections', JSON.stringify(pageStates.selections));
+            formData.append('rotations', JSON.stringify(pageStates.rotations));
+
+            // ==========================================================
+            // CORREÇÃO: URL DO FETCH APONTA PARA A NOVA API
+            // ==========================================================
+            const url = "{% url 'converter:split_pdf' %}";
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess(data.download_url, data.file_name);
+                } else {
+                    showError(data.message || "Ocorreu um erro desconhecido.");
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                showError(error.message || "Ocorreu uma falha na comunicação com o servidor.");
+            })
+            .finally(() => {
+                setProcessingState(false);
+            });
+        }
+
+        function setProcessingState(isProcessing) {
+            splitBtn.disabled = isProcessing; resetBtn.disabled = isProcessing;
+            if (isProcessing) {
+                resultArea.innerHTML = '';
+                progressContainer.classList.remove('d-none');
+                updateProgressBar(50, 'A processar...');
+            } else { setTimeout(() => progressContainer.classList.add('d-none'), 2000); }
+        }
+        function updateProgressBar(percentage, text = `${percentage}%`) {
+            progressBar.style.width = `${percentage}%`; progressBar.textContent = text;
+        }
+        function showSuccess(downloadUrl, fileName) {
+            updateProgressBar(100, 'Concluído!');
+            resultArea.innerHTML = `<div class="alert alert-success">Processo concluído! <a href="${downloadUrl}" class="btn btn-sm btn-success ms-2" download="${fileName || ''}">Baixar Resultado</a></div>`;
+        }
+        function showError(message) {
+            progressContainer.classList.add('d-none');
+            resultArea.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+        }
+        function resetUI() {
+            fileInput.value = ''; selectedFile = null;
+            pageStates = { selections: [], rotations: [] };
+            uploadArea.classList.remove('d-none'); processingArea.classList.add('d-none');
+            pageContainer.innerHTML = '';
+            selectionControls.classList.add('d-none');
+            resultArea.innerHTML = '';
+            progressContainer.classList.add('d-none');
+        }
+    } catch (error) {
+        console.error("Erro fatal na inicialização do script:", error);
+    }
+});
+</script>
+{% endblock %}
