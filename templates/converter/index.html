@@ -5,36 +5,33 @@
 
 {% block extra_styles %}
 <style>
+    /* Estilo do card que já funcionava, com o efeito de hover */
     .tool-card {
-        position: relative; /* CRUCIAL para o posicionamento da imagem */
+        position: relative;
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
         transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        height: 100%;
     }
 
     .tool-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
     }
-    
-    /* Garante que o conteúdo do card não fique escondido atrás do selo */
-    .tool-card .card-body {
-        padding-top: 2.5rem; /* Adiciona espaço no topo para o selo */
+
+    .tool-icon-container {
+        min-height: 30px; /* Altura mínima para garantir alinhamento vertical */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
     }
 
-    /*
-     * ==========================================================
-     * CORREÇÃO DEFINITIVA: ESTILO PARA A IMAGEM "NOVO!"
-     * ==========================================================
-     */
-    .new-badge-img {
-        position: absolute; /* Posiciona a imagem em relação ao card */
-        top: -10px;         /* Move o selo um pouco para fora do topo */
-        right: -10px;        /* Move o selo um pouco para fora da direita */
-        width: 80px;         /* Tamanho do selo */
-        height: auto;
-        z-index: 10;         /* Garante que fique por cima do conteúdo */
+    /* Estilo para a seta de conversão */
+    .conversion-arrow {
+        font-size: 1rem;
+        color: #adb5bd;
+        margin: 1rem; /* Espaçamento horizontal da seta */
     }
-</style>
+</style>    
 {% endblock %}
 
 {% block content %}
@@ -59,124 +56,17 @@
     <div class="container">
         
         <div class="row g-4">
-            <!-- Merge PDFs -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-object-group fa-3x text-primary"></i></div>
-                        <h5 class="card-title fw-bold">Unir PDFs</h5>
-                        <p class="card-text text-muted flex-grow-1">Combine múltiplos arquivos PDF em um único documento.</p>
-                        <a href="{% url 'converter:unir_pdf_page' %}" class="stretched-link"></a>
-                    </div>
-                </div>
-            </div>
-            <!-- Split PDF -->
-            <div class="col-md-6 col-lg-4">
-                 <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-cut text-success fa-3x"></i></div>
-                        <h5 class="card-title fw-bold">Dividir PDF</h5>
-                        <p class="card-text text-muted flex-grow-1">Tranforme um unicio documento PDF em multiplos arquivos.</p>
-                        <a href="{% url 'converter:dividir_pdf_page' %}" class="stretched-link"></a>
-                    </div>
-                </div>
-            </div>
-            <!-- Compress PDF -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-compress-alt fa-3x text-warning"></i></div>
-                        <h5 class="card-title fw-bold">Comprimir PDF</h5>
-                        <p class="card-text text-muted flex-grow-1">Reduza o tamanho do arquivo mantendo a qualidade.</p>
-                        <a href="{% url 'converter:comprimir_pdf_page' %}" class="stretched-link"></a>
-                    </div>
-                </div>
-            </div>
-            <!-- Protect PDF -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-lock fa-3x text-danger"></i></div>
-                        <h5 class="card-title fw-bold">Proteger PDF</h5>
-                        <p class="card-text text-muted flex-grow-1">Adicione senha e criptografia ao documento.</p>
-                        <a href="{% url 'converter:proteger_pdf_page' %}" class="stretched-link"></a>
-                    </div>
-                </div>
-            </div>
-            <!-- Unlock PDF -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-unlock fa-3x text-info"></i></div>
-                        <h5 class="card-title fw-bold">Remover Senha do PDF</h5>
-                        <p class="card-text text-muted flex-grow-1">Remova a proteção por senha de PDFs.</p>
-                        <a href="{% url 'converter:remover_senha_pdf_page' %}" class="stretched-link"></a>
-                    </div>
-                </div>
-            </div>
-            <!-- PDF to Word -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-file-word fa-3x text-primary"></i></div>
-                        <h5 class="card-title fw-bold">PDF para Word</h5>
-                        <p class="card-text text-muted flex-grow-1">Converta PDF para documento Word (.docx).</p>
-                        <a href="{% url 'converter:pdf_para_word_page' %}" class="stretched-link"></a>
-                    </div>
-                </div>
-            </div>
-            <!-- PDF to Excel -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-file-excel fa-3x text-success"></i></div>
-                        <h5 class="card-title fw-bold">PDF para Excel</h5>
-                        <p class="card-text text-muted flex-grow-1">Extraia dados do PDF para planilha Excel (.xlsx).</p>
-                        <a href="{% url 'converter:pdf_para_excel_page' %}" class="stretched-link"></a>
-                    </div>
-                </div>
-            </div>
-            <!-- PDF to Image -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-image fa-3x text-warning"></i></div>
-                        <h5 class="card-title fw-bold">PDF para Imagem</h5>
-                        <p class="card-text text-muted flex-grow-1">Converta páginas do PDF para JPG ou PNG.</p>
-                        <a href="{% url 'converter:pdf_para_imagem_page' %}" class="stretched-link"></a>
-                    </div>
-                </div>
-            </div>
-            <!-- Image to PDF -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-file-image fa-3x text-info"></i></div>
-                        <h5 class="card-title fw-bold">Imagem para PDF</h5>
-                        <p class="card-text text-muted flex-grow-1">Converta múltiplas imagens em um PDF.</p>
-                        <a href="{% url 'converter:imagem_para_pdf_page' %}" class="stretched-link"></a>
-                    </div>
-                </div>
-            </div>
-            <!-- Convert Image -->
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm tool-card">
-                    <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-exchange-alt fa-3x text-secondary"></i></div>
-                        <h5 class="card-title fw-bold">Converter Imagem</h5>
-                        <p class="card-text text-muted flex-grow-1">Converta entre JPG, PNG e outros formatos.</p>
-                        <a href="{% url 'converter:converte_imagem_page' %}" class="stretched-link"></a>
-                    </div>
-                </div>
-            </div>
+
+            <!-- Novas Ferramentas -->
+
             <!-- Rotacionar PDF-->
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
                     <div class="col-lg-6">  
-                        <img src="{% static 'img/novo.png' %}" alt="Novo" style="height:50px;">
+                        <img src="{% static 'img/novo.png' %}" alt="Novo" style="height:40px;">
                      </div>
                     <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-rotate-right text-primary fa-3x"></i></div>
+                        <div class="tool-icon mb-3"><img src="{% static 'img/icon/rotacionar.svg' %}" alt="Novo" style="height:90px;"></div>
                         <h5 class="card-title fw-bold">Rotacionar PDF</h5>
                         <p class="card-text text-muted flex-grow-1">Rode as páginas do seu PDF como desejar.</p>
                         <a href="{% url 'converter:rotacionar_pdf_page' %}" class="stretched-link"></a>
@@ -187,16 +77,197 @@
             <div class="col-md-6 col-lg-4">
                 <div class="card h-100 border-0 shadow-sm tool-card">
                      <div class="col-lg-6">  
-                        <img src="{% static 'img/novo.png' %}" alt="Novo" style="height:50px;">
+                        <img src="{% static 'img/novo.png' %}" alt="Novo" style="height:40px;">
                      </div>   
                     <div class="card-body text-center p-4 d-flex flex-column">
-                        <div class="tool-icon mb-3"><i class="fas fa-list-ol text-info fa-3x"></i></div>
+                        <div class="tool-icon mb-3"><img src="{% static 'img/icon/numerar pagina.svg' %}" alt="Novo" style="height:100px;"></div>
                         <h5 class="card-title fw-bold">Numerar Paginas</h5>
                         <p class="card-text text-muted flex-grow-1">Numere as paginas de seu pdf, de forma simples</p>
                         <a href="{% url 'converter:numerar_pagina_page' %}" class="stretched-link"></a>
                     </div>
                 </div>
             </div>
+            <!-- Word para PDF -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 tool-card">
+                    <div class="col-lg-6">  
+                        <img src="{% static 'img/novo.png' %}" alt="Novo" style="height:40px;">
+                     </div>
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon-container">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="{% static 'img/icon/word.svg' %}" alt="Word" style="height:90px; width:90px;">
+                                <i class="fas fa-long-arrow-alt-right conversion-arrow mx-2"></i>
+                                <img src="{% static 'img/icon/pdf.svg' %}" alt="PDF" style="height:90px; width:90px;">
+                            </div>
+                        </div>
+                        <h5 class="card-title fw-bold">Word para PDF</h5>
+                        <p class="card-text text-muted flex-grow-1">Converta seus documentos WORD (.doc, .docx) para PDF de forma fácil e segura</p>
+                        <a href="{% url 'converter:word_para_pdf_page' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+             <!-- Excel para PDF -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 tool-card">
+                    <div class="col-lg-6">  
+                        <img src="{% static 'img/novo.png' %}" alt="Novo" style="height:40px;">
+                     </div>
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon-container">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="{% static 'img/icon/excel.svg' %}" alt="Word" style="height:90px; width:90px;">
+                                <i class="fas fa-long-arrow-alt-right conversion-arrow mx-2"></i>
+                                <img src="{% static 'img/icon/pdf.svg' %}" alt="PDF" style="height:90px; width:90px;">
+                            </div>
+                        </div>
+                        <h5 class="card-title fw-bold">Excel para PDF</h5>
+                        <p class="card-text text-muted flex-grow-1">Converta as suas folhas de cálculo EXCEL (.xls, .xlsx) para PDF com precisão.</p>
+                        <a href="{% url 'converter:word_para_pdf_page' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Merge PDFs -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon mb-3"><img src="{% static 'img/icon/unir.svg' %}" alt="Novo" style="height:100px;"></div>
+                        <h5 class="card-title fw-bold">Unir PDFs</h5>
+                        <p class="card-text text-muted flex-grow-1">Combine múltiplos arquivos PDF em um único documento.</p>
+                        <a href="{% url 'converter:unir_pdf_page' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+            <!-- Split PDF -->
+            <div class="col-md-6 col-lg-4">
+                 <div class="card h-100 border-0 shadow-sm tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon mb-3"><img src="{% static 'img/icon/dividir.svg' %}" alt="Novo" style="height:100px;"></div>
+                        <h5 class="card-title fw-bold">Dividir PDF</h5>
+                        <p class="card-text text-muted flex-grow-1">Tranforme um unicio documento PDF em multiplos arquivos.</p>
+                        <a href="{% url 'converter:dividir_pdf_page' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+            <!-- Compress PDF -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon mb-3"><img src="{% static 'img/icon/comprimir.svg' %}" alt="Novo" style="height:100px;"></div>
+                        <h5 class="card-title fw-bold">Comprimir PDF</h5>
+                        <p class="card-text text-muted flex-grow-1">Reduza o tamanho do arquivo mantendo a qualidade.</p>
+                        <a href="{% url 'converter:comprimir_pdf_page' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+            <!-- Protect PDF -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon mb-3"><img src="{% static 'img/icon/proteger.svg' %}" alt="Novo" style="height:100px;"></div>
+                        <h5 class="card-title fw-bold">Proteger PDF</h5>
+                        <p class="card-text text-muted flex-grow-1">Adicione senha e criptografia ao documento.</p>
+                        <a href="{% url 'converter:proteger_pdf_page' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+            <!-- Unlock PDF -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon mb-3"><img src="{% static 'img/icon/dosbloquear.svg' %}" alt="Novo" style="height:100px;"></div>
+                        <h5 class="card-title fw-bold">Remover Senha do PDF</h5>
+                        <p class="card-text text-muted flex-grow-1">Remova a proteção por senha de PDFs.</p>
+                        <a href="{% url 'converter:remover_senha_pdf_page' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+            <!-- PDF to Word -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon-container">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="{% static 'img/icon/pdf.svg' %}" alt="PDF" style="height:90px; width:90px;">
+                                <i class="fas fa-long-arrow-alt-right conversion-arrow mx-2"></i>
+                                <img src="{% static 'img/icon/word.svg' %}" alt="Word" style="height:90px; width:90px;">
+                            </div>
+                        </div>
+                        <h5 class="card-title fw-bold">PDF para Word</h5>
+                        <p class="card-text text-muted flex-grow-1">Converta PDF para documento Word (.docx).</p>
+                        <a href="{% url 'converter:pdf_para_word_page' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+            <!-- PDF to Excel -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon-container">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="{% static 'img/icon/pdf.svg' %}" alt="PDF" style="height:90px; width:90px;">
+                                <i class="fas fa-long-arrow-alt-right conversion-arrow mx-2"></i>
+                                <img src="{% static 'img/icon/excel.svg' %}" alt="Execel" style="height:90px; width:90px;">
+                            </div>
+                        </div>
+                        <h5 class="card-title fw-bold">PDF para Excel</h5>
+                        <p class="card-text text-muted flex-grow-1">Extraia dados do PDF para planilha Excel (.xlsx).</p>
+                        <a href="{% url 'converter:pdf_para_excel_page' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+            <!-- PDF to Image -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon-container">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="{% static 'img/icon/pdf.svg' %}" alt="PDF" style="height:90px; width:90px;">
+                                <i class="fas fa-long-arrow-alt-right conversion-arrow mx-2"></i>
+                                <img src="{% static 'img/icon/imagem.svg' %}" alt="imagem" style="height:90px; width:90px;">
+                            </div>
+                        </div>
+                        <h5 class="card-title fw-bold">PDF para Imagem</h5>
+                        <p class="card-text text-muted flex-grow-1">Converta páginas do PDF para JPG ou PNG.</p>
+                        <a href="{% url 'converter:pdf_para_imagem_page' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+            <!-- Image to PDF -->
+             <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon-container">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="{% static 'img/icon/imagem_2.svg' %}" alt="Imagem" style="height:90px; width:90px;">
+                                <i class="fas fa-long-arrow-alt-right conversion-arrow mx-2"></i>
+                                <img src="{% static 'img/icon/pdf.svg' %}" alt="PDF" style="height:90px; width:90px;">
+                            </div>
+                        </div>
+                        <h5 class="card-title fw-bold">Imagem para PDF</h5>
+                        <p class="card-text text-muted flex-grow-1">Converta múltiplas imagens em um PDF.</p>
+                        <a href="{% url 'converter:imagem_para_pdf_page' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>
+            <!-- Convert Image -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 tool-card">
+                    <div class="card-body text-center p-4 d-flex flex-column">
+                        <div class="tool-icon-container">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <img src="{% static 'img/icon/jpg.svg' %}" alt="JPG" style="height:90px; width:90px;">
+                                <i class="fas fa-long-arrow-alt-right conversion-arrow mx-2"></i>
+                                <img src="{% static 'img/icon/png.svg' %}" alt="PNG" style="height:90px; width:90px;">
+                            </div>
+                        </div>
+                        <h5 class="card-title fw-bold">Converter Imagem</h5>
+                        <p class="card-text text-muted flex-grow-1">Converta entre JPG, PNG e outros formatos.</p>
+                        <a href="{% url 'converter:converte_imagem_page' %}" class="stretched-link"></a>
+                    </div>
+                </div>
+            </div>            
         </div>
     </div>
 </section>

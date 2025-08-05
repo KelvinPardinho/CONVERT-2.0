@@ -20,6 +20,8 @@ urlpatterns = [
     path('converte_imagem/', views.converte_imagem_page, name='converte_imagem_page'),
     path('rotacionar_pdf/', views.rotacionar_pdf_page, name='rotacionar_pdf_page'),
     path('numerar_pagina/', views.numerar_pagina_page, name='numerar_pagina_page'),
+    path('word_para_pdf/', views.word_para_pdf_page, name='word_para_pdf_page'),
+    path('exce_para_pdf/', views.excel_para_pdf_page, name='excel_para_pdf_page'),
 
     # API Endpoints
     path('api/sign_pdf', views.sign_pdf, name='sign_pdf'),
@@ -36,6 +38,8 @@ urlpatterns = [
     path('api/pdf-to-image/', views.pdf_to_image, name='pdf_to_image'),
     path('api/rotention-pdf/', views.rodar_pdf, name='rotention_pdf'),
     path('api/number-page/', views.number_page, name='number_page'),
+    path('api/word-to-pdf/', views.word_to_pdf, name='word_to_pdf'),
+    path('api/excel-to-pdf/', views.excel_to_pdf, name='excel_to_pdf'),
     
     path('download/converted/<str:filename>/', views.download_converted, name='download_converted'),
 ]

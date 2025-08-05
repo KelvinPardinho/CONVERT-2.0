@@ -22,6 +22,8 @@ from .services.convert_image import process_convert_image
 from .services.sign_pdf import process_sign_pdf 
 from .services.rotention_pdf import process_rotate_pdf
 from .services.number_page import process_add_page_numbers
+from .services.word_to_pdf import process_word_to_pdf
+from .services.excel_to_pdf import process_excel_to_pdf
 
 def clean_old_converted_files():
     converted_dir = os.path.join(settings.MEDIA_ROOT, 'converted')
@@ -502,7 +504,75 @@ def number_page(request):
                 'file_name': output_filename
             })
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)}, status=500)        
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+def word_to_pdf(request):
+    """
+    Lida com o upload e conversão de um ficheiro Word (.doc, .docx) para PDF.
+    GET: Mostra a página de upload.
+    POST: Processa o ficheiro e devolve uma resposta JSON.
+    """
+    # Se for um pedido GET, simplesmente renderiza a página HTML
+    if request.method == 'GET':
+        return render(request, 'converter/word_para_pdf.html') # Confirme o caminho do seu template
+
+    # Se for um pedido POST (da nossa chamada fetch), processa os dados
+    if request.method == 'POST':
+        clean_old_converted_files()
+        
+        word_file = request.FILES.get('file')
+        if not word_file:
+            return JsonResponse({'success': False, 'message': 'Nenhum ficheiro enviado.'}, status=400)
+            
+        try:
+            # Chama a função de serviço para fazer o trabalho pesado
+            success, message, output_filename = process_word_to_pdf(word_file, get_converted_dir())
+            
+            if not success:
+                return JsonResponse({'success': False, 'message': message}, status=500)
+                
+            # Resposta JSON de sucesso
+            return JsonResponse({
+                'success': True, 
+                'message': message, 
+                'download_url': reverse('converter:download_converted', args=[output_filename]),
+                'file_name': output_filename
+            })
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f"Ocorreu um erro inesperado: {str(e)}"}, status=500)
+
+    # Se o método não for GET nem POST, é inválido
+    return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)
+
+def excel_to_pdf(request):
+    if request.method == 'GET':
+        return render(request, 'converter/excel_para_pdf.html') # Confirme o caminho do seu template
+
+    if request.method == 'POST':
+        clean_old_converted_files()
+        
+        excel_file = request.FILES.get('file')
+        if not excel_file:
+            return JsonResponse({'success': False, 'message': 'Nenhum ficheiro enviado.'}, status=400)
+            
+        try:
+            success, message, output_filename = process_excel_to_pdf(excel_file, get_converted_dir())
+            
+            if not success:
+                return JsonResponse({'success': False, 'message': message}, status=500)
+                
+            return JsonResponse({
+                'success': True, 
+                'message': message, 
+                'download_url': reverse('converter:download_converted', args=[output_filename]),
+                'file_name': output_filename
+            })
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f"Ocorreu um erro inesperado: {str(e)}"}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Método inválido.'}, status=405)        
 
 def download_converted(request, filename):
     file_path = os.path.join(get_converted_dir(), filename)
@@ -545,3 +615,9 @@ def rotacionar_pdf_page(request):
 
 def numerar_pagina_page(request):
     return render(request, 'converter/numerar_pagina.html')
+
+def word_para_pdf_page(request):
+    return render(request, 'converter/word_para_pdf.html')
+
+def excel_para_pdf_page(request):
+    return render(request, 'converter/excel_para_pdf.html')

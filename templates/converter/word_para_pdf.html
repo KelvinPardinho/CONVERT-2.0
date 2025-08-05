@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Converta WORD para PDF{% endblock %}
+
+{% block content %}
+<section class="py-5" style="background: #f7f8fa; min-height: 80vh;">
+    <div class="container text-center">
+        <div class="mb-4">
+            <i class="fas fa-file-pdf" style="font-size: 6rem; color: #dc3545;"></i>
+        </div>
+        <h1 class="fw-bold mb-3" style="font-size:2.5rem;">Converta WORD para PDF</h1>
+        <p class="mb-2 text-muted" style="font-size:1.2rem;">
+            Converta seus documentos WORD (.doc, .docx) para PDF de forma fácil e segura.
+        </p>
+        <div class="d-flex justify-content-center align-items-center mb-2 gap-2">
+            <button type="button" class="btn btn-lg px-5 py-3 text-white" id="selectFileBtn"
+                style="background:#2b579a; color:#fff; font-size:1.3rem; border-radius:16px; box-shadow:0 2px 8px #0001;">
+                <i class="fas fa-file-word me-2"></i>Selecionar arquivo WORD
+            </button>
+        </div>
+        <div class="mb-4 text-muted" style="font-size:1rem;">
+            ou <span style="text-decoration:underline;">arraste e solte o ficheiro em qualquer lugar da página</span>
+        </div>
+        <input type="file" id="wordFile" name="file" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;">
+        
+        <!-- O nome do ficheiro e os botões de ação -->
+        <span id="fileName" class="text-secondary d-block mb-3"></span>
+        <div id="actionButtons" class="d-none justify-content-center align-items-center gap-2">
+            <button id="convertBtn" class="btn btn-lg px-5" style="background-color: #dc3545; border-color: #dc3545; color: #fff;">
+                <i class="fas fa-file-pdf me-2"></i>Converter para PDF
+            </button>
+            <button id="resetBtn" class="btn btn-secondary btn-lg px-5">
+                <i class="fas fa-times me-2"></i>Outro ficheiro
+            </button>
+        </div>
+
+        <div class="progress mt-3 mx-auto" style="height: 25px; max-width:500px; display:none;" id="progressBarContainer">
+            <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" id="progressBar" style="width: 0%">0%</div>
+        </div>
+        <div id="resultArea" class="mt-4"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const fileInput = document.getElementById('wordFile');
+const selectFileBtn = document.getElementById('selectFileBtn');
+const convertBtn = document.getElementById('convertBtn');
+const fileNameSpan = document.getElementById('fileName');
+// CORREÇÃO: Seletores para os novos elementos
+const resetBtn = document.getElementById('resetBtn');
+const actionButtons = document.getElementById('actionButtons'); // O container dos botões
+let selectedFile = null;
+
+// Seleção manual
+selectFileBtn.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', handleFileChange);
+
+// Drag & Drop global
+document.body.addEventListener('dragover', function(e) { e.preventDefault(); });
+document.body.addEventListener('drop', function(e) {
+    e.preventDefault();
+    if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        handleFileChange();
+    }
+});
+
+function handleFileChange() {
+    selectedFile = fileInput.files[0];
+    if (selectedFile) {
+        fileNameSpan.textContent = selectedFile.name + " pronto para converter";
+        // Esconde o botão de upload principal
+        selectFileBtn.style.display = 'none';
+        selectFileBtn.parentElement.nextElementSibling.style.display = 'none'; // Esconde "ou arraste e solte..."
+        // Mostra o container com os botões "Converter" e "Outro ficheiro"
+        actionButtons.classList.remove('d-none');
+        actionButtons.classList.add('d-flex');
+    }
+}
+
+// Conversão
+convertBtn.addEventListener('click', function() {
+    if (!selectedFile) return;
+    convertBtn.disabled = true;
+    resetBtn.disabled = true; // Desabilita também o botão de reset
+    document.getElementById('resultArea').innerHTML = '';
+    const progressBarContainer = document.getElementById('progressBarContainer');
+    const progressBar = document.getElementById('progressBar');
+    progressBarContainer.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressBar.textContent = '0%';
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    fetch("{% url 'converter:word_to_pdf' %}", {
+        method: "POST",
+        body: formData,
+        headers: { "X-CSRFToken": "{{ csrf_token }}" }
+    })
+    .then(response => response.json())
+    .then(data => {
+        progressBar.style.width = '100%';
+        progressBar.textContent = '100%';
+        if (data.success) {
+            document.getElementById('resultArea').innerHTML = `
+                <div class="alert alert-success">Conversão realizada! <a href="${data.download_url}" class="btn btn-success" download="${data.file_name || ''}">Baixar PDF</a></div>
+            `;
+        } else {
+            document.getElementById('resultArea').innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+        }
+    })
+    .catch(() => {
+        document.getElementById('resultArea').innerHTML = `<div class="alert alert-danger">Erro ao converter o arquivo.</div>`;
+    })
+    .finally(() => {
+        convertBtn.disabled = false;
+        resetBtn.disabled = false; // Reabilita o botão de reset
+        setTimeout(() => {
+            progressBarContainer.style.display = 'none';
+        }, 1500);
+    });
+});
+
+// ==========================================================
+// CORREÇÃO: Ação do botão de reset
+// ==========================================================
+resetBtn.addEventListener('click', function() {
+    // A forma mais simples e robusta de recomeçar é recarregar a página
+    location.reload();
+});
+
+</script>
+{% endblock %}
