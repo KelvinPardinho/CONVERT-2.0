@@ -22,8 +22,8 @@ def index(request):
     
     posts_queryset = posts_queryset.order_by('-created_at')
     
-    # Configurar paginação (26 posts por página)
-    paginator = Paginator(posts_queryset, 26)
+    # Configurar paginação (20 posts por página)
+    paginator = Paginator(posts_queryset, 20)
     page_number = request.GET.get('page', 1)
     posts = paginator.get_page(page_number)
     
@@ -76,7 +76,7 @@ def category_view(request, slug):
     ).order_by('-created_at')
     
     # Paginação
-    paginator = Paginator(posts_queryset, 26)
+    paginator = Paginator(posts_queryset, 20)
     page_number = request.GET.get('page', 1)
     posts = paginator.get_page(page_number)
     
@@ -103,7 +103,7 @@ def search_view(request):
         ).distinct()
     
     # Paginação
-    paginator = Paginator(posts_queryset, 26)
+    paginator = Paginator(posts_queryset, 20)
     page_number = request.GET.get('page', 1)
     posts = paginator.get_page(page_number)
     
