@@ -1,4 +1,4 @@
-/* static/css/style.css (VERSÃO FINAL COM TODAS AS CORREÇÕES DE ESTILO) */
+/* static/css/style.css (VERSÃO CORRIGIDA FINAL) */
 
 :root {
     --bs-primary: #0d6efd;
@@ -6,7 +6,7 @@
     --text-color: #212529;
     --card-bg-color: #ffffff;
     --card-border-color: #dee2e6;
-    --navbar-bg-color: #212529; /* Cor preta/cinza escuro para a navbar */
+    --navbar-bg-color: #212529;
     --navbar-text-color: rgba(255, 255, 255, 0.75);
     --navbar-text-hover-color: #FFFFFF;
     --footer-bg-color: #343a40;
@@ -59,4 +59,122 @@ footer {
     color: var(--footer-text-color);
     text-align: center;
     padding: 20px 0;
+}
+
+/* Classes para truncar texto com CSS padrão (sem webkit) */
+.line-clamp-1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.line-clamp-2,
+.line-clamp-3,
+.line-clamp-4 {
+    overflow: hidden;
+    display: block;
+    position: relative;
+    max-height: calc(1.2em * 2); /* Para 2 linhas */
+}
+
+.line-clamp-3 {
+    max-height: calc(1.2em * 3); /* Para 3 linhas */
+}
+
+.line-clamp-4 {
+    max-height: calc(1.2em * 4); /* Para 4 linhas */
+}
+
+/* Para navegadores modernos que suportam line-clamp */
+@supports (display: -webkit-box) {
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.2em;
+        max-height: calc(1.2em * 2);
+    }
+    
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.2em;
+        max-height: calc(1.2em * 3);
+    }
+    
+    .line-clamp-4 {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.2em;
+        max-height: calc(1.2em * 4);
+    }
+}
+
+/* Estilos adicionais para o blog */
+.blog-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.blog-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.featured-post {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.pagination-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    color: #374151;
+    background-color: white;
+    transition: all 0.2s ease-in-out;
+}
+
+.pagination-btn:hover {
+    background-color: #f3f4f6;
+    color: #1f2937;
+    text-decoration: none;
+}
+
+.pagination-btn.active {
+    background-color: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsividade para dispositivos móveis */
+@media (max-width: 768px) {
+    .pagination-container {
+        justify-content: center;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .pagination-container > div:first-child {
+        order: 1;
+    }
+    
+    .pagination-container > div:last-child {
+        order: 2;
+        margin-left: 0;
+    }
 }

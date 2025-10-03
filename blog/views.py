@@ -1,37 +1,116 @@
 # blog/views.py (VERSÃO FINAL E UNIFICADA)
 
 from django.shortcuts import render, get_object_or_404
-from .models import Post, Category
+from django.core.paginator import Paginator
+from django.db.models import Q
+from .models import BlogPost, BlogCategory
 
-def blog_index(request):
-    # 1. Busca todos os posts publicados, do mais recente para o mais antigo.
-    all_posts = Post.objects.filter(is_published=True).order_by('-created_at')
+def index(request):
+    """
+    View principal do blog com artigo em destaque e paginação
+    """
+    # Buscar artigo em destaque (o mais recente marcado como featured)
+    featured_post = BlogPost.objects.filter(
+        is_published=True, 
+        is_featured=True
+    ).order_by('featured_order', '-created_at').first()
     
-    # 2. Encontra o post em destaque, se houver.
-    featured_post = all_posts.filter(is_featured=True).first()
+    # Buscar todos os posts publicados, excluindo o em destaque
+    posts_queryset = BlogPost.objects.filter(is_published=True)
+    if featured_post:
+        posts_queryset = posts_queryset.exclude(id=featured_post.id)
     
-    # 3. Busca todas as categorias para o filtro.
-    categories = Category.objects.all()
-
+    posts_queryset = posts_queryset.order_by('-created_at')
+    
+    # Configurar paginação (26 posts por página)
+    paginator = Paginator(posts_queryset, 26)
+    page_number = request.GET.get('page', 1)
+    posts = paginator.get_page(page_number)
+    
+    # Buscar categorias para o menu
+    categories = BlogCategory.objects.all()
+    
     context = {
         'featured_post': featured_post,
-        # 4. Passa a lista COMPLETA de posts para o template.
-        #    Isso garante que o destaque também apareça na lista principal se o usuário quiser ver tudo.
-        'all_posts': all_posts,
+        'posts': posts,
         'categories': categories,
+        'total_posts': posts_queryset.count(),
     }
     
     return render(request, 'blog/index.html', context)
 
 def detalhe_artigo(request, slug):
-    # Busca o post atual que o usuário está lendo
-    post = get_object_or_404(Post.objects.select_related('author', 'category'), slug=slug, is_published=True)
+    """
+    View para mostrar um artigo específico
+    """
+    post = get_object_or_404(BlogPost, slug=slug, is_published=True)
     
-    # Busca os 5 posts mais recentes para a barra lateral, excluindo o post atual
-    recent_posts = Post.objects.filter(is_published=True).exclude(pk=post.pk).order_by('-created_at')[:5]
+    # Posts relacionados (mesma categoria, excluindo o atual)
+    related_posts = BlogPost.objects.filter(
+        category=post.category,
+        is_published=True
+    ).exclude(id=post.id).order_by('-created_at')[:4]
+    
+    # Posts recentes para sidebar
+    recent_posts = BlogPost.objects.filter(
+        is_published=True
+    ).exclude(id=post.id).order_by('-created_at')[:5]
     
     context = {
         'post': post,
+        'related_posts': related_posts,
         'recent_posts': recent_posts,
     }
+    
     return render(request, 'blog/detalhe_artigo.html', context)
+
+def category_view(request, slug):
+    """
+    View para mostrar posts de uma categoria específica
+    """
+    category = get_object_or_404(BlogCategory, slug=slug)
+    
+    posts_queryset = BlogPost.objects.filter(
+        category=category,
+        is_published=True
+    ).order_by('-created_at')
+    
+    # Paginação
+    paginator = Paginator(posts_queryset, 26)
+    page_number = request.GET.get('page', 1)
+    posts = paginator.get_page(page_number)
+    
+    context = {
+        'category': category,
+        'posts': posts,
+        'total_posts': posts_queryset.count(),
+    }
+    
+    return render(request, 'blog/category.html', context)
+
+def search_view(request):
+    """
+    View para busca de posts
+    """
+    query = request.GET.get('q', '')
+    posts_queryset = BlogPost.objects.filter(is_published=True)
+    
+    if query:
+        posts_queryset = posts_queryset.filter(
+            Q(title__icontains=query) |
+            Q(content__icontains=query) |
+            Q(excerpt__icontains=query)
+        ).distinct()
+    
+    # Paginação
+    paginator = Paginator(posts_queryset, 26)
+    page_number = request.GET.get('page', 1)
+    posts = paginator.get_page(page_number)
+    
+    context = {
+        'posts': posts,
+        'query': query,
+        'total_posts': posts_queryset.count(),
+    }
+    
+    return render(request, 'blog/search.html', context)
