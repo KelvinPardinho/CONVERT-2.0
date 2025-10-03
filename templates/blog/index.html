@@ -10,32 +10,38 @@
     {% if featured_post %}
     <section class="mb-5">
         <a href="{{ featured_post.get_absolute_url }}" class="text-decoration-none">
-            <div class="card border-0 shadow-lg featured-post text-white overflow-hidden">
+            <div class="card border-0 shadow-lg featured-post overflow-hidden" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                 <div class="row g-0">
                     <div class="col-md-6">
                         {% if featured_post.cover_image %}
                             <img src="{{ featured_post.cover_image.url }}" alt="{{ featured_post.title }}" 
-                                 class="img-fluid h-100 w-100" style="object-fit: cover;">
+                                 class="img-fluid h-100 w-100" style="object-fit: cover; min-height: 350px;">
                         {% else %}
-                            <div class="h-100 d-flex align-items-center justify-content-center bg-gradient" style="min-height: 300px;">
-                                <i class="fas fa-newspaper display-1 opacity-50"></i>
+                            <div class="h-100 d-flex align-items-center justify-content-center" style="min-height: 350px; background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);">
+                                <i class="fas fa-newspaper display-1 text-white opacity-50"></i>
                             </div>
                         {% endif %}
                     </div>
-                    <div class="col-md-6 p-4 p-lg-5">
+                    <div class="col-md-6 p-4 p-lg-5 text-white">
                         <div class="d-flex align-items-center mb-3">
-                            <span class="badge bg-warning text-dark me-3 px-3 py-2">
+                            <span class="badge bg-warning text-dark me-3 px-3 py-2 fw-bold">
                                 <i class="fas fa-star me-1"></i>DESTAQUE
                             </span>
                             {% if featured_post.category %}
-                                <span class="badge bg-light bg-opacity-25 px-3 py-2">
+                                <span class="badge bg-white bg-opacity-25 text-white px-3 py-2">
                                     {{ featured_post.category.name }}
                                 </span>
                             {% endif %}
                         </div>
-                        <h1 class="display-5 fw-bold mb-3">{{ featured_post.title }}</h1>
-                        <p class="lead mb-4 opacity-90">{{ featured_post.excerpt|truncatewords:20 }}</p>
-                        <div class="d-flex align-items-center text-white-50 small">
+                        <h1 class="display-5 fw-bold mb-3 text-white">{{ featured_post.title }}</h1>
+                        <p class="lead mb-4 text-white opacity-90">
+                            {% if featured_post.excerpt %}
+                                {{ featured_post.excerpt|truncatewords:20 }}
+                            {% else %}
+                                {{ featured_post.content|striptags|truncatewords:25 }}
+                            {% endif %}
+                        </p>
+                        <div class="d-flex align-items-center text-white opacity-75 small">
                             <i class="fas fa-calendar-alt me-2"></i>
                             {{ featured_post.created_at|date:"d/m/Y" }}
                             <i class="fas fa-user ms-4 me-2"></i>
