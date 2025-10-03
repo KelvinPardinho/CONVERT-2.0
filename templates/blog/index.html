@@ -42,9 +42,6 @@
                             <i class="fas fa-user ml-4 mr-2"></i>
                             {{ featured_post.author.get_full_name|default:featured_post.author.username }}
                         </div>
-                        <span class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                            Ler Artigo <i class="fas fa-arrow-right ml-2"></i>
-                        </span>
                     </div>
                 </div>
             </div>
@@ -72,7 +69,7 @@
     </div>
 
     <!-- Grade de Artigos -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+    <div class="blog-grid mb-12">
         {% for post in posts %}
         <a href="{{ post.get_absolute_url }}" style="text-decoration:none;">
         <article class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden cursor-pointer">
