@@ -22,16 +22,13 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-for-local-dev
 DEBUG = os.getenv('NODE_ENV') != 'production'
 #DEBUG = True
 # Configura os hosts permitidos
-ALLOWED_HOSTS = []
-RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-
-# Em desenvolvimento local, permita localhost
-if DEBUG:
-    ALLOWED_HOSTS.append('127.0.0.1')
-    ALLOWED_HOSTS.append('localhost')
-
+ALLOWED_HOSTS = [
+    'convertpdf.com.br',
+    'www.convertpdf.com.br',
+    'convert-2-0.onrender.com',  # Adicione esta linha
+    'localhost',
+    '127.0.0.1',
+]
 
 # ==============================================================================
 # APLICAÇÕES E MIDDLEWARE
