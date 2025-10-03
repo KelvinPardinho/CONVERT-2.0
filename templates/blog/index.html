@@ -9,7 +9,8 @@
     <!-- Artigo em Destaque -->
     {% if featured_post %}
     <section class="mb-12">
-        <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg overflow-hidden shadow-2xl">
+        <a href="{{ featured_post.get_absolute_url }}" style="text-decoration:none;">
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg overflow-hidden shadow-2xl">
             <div class="md:flex">
                 <div class="md:w-1/2">
                     {% if featured_post.cover_image %}
@@ -32,23 +33,23 @@
                             </span>
                         {% endif %}
                     </div>
-                    <h1 class="text-3xl md:text-4xl font-bold mb-4">{{ featured_post.title }}</h1>
-                    <p class="text-lg opacity-90 mb-6 line-clamp-3">{{ featured_post.excerpt }}</p>
+                    <h1 class="text-3xl md:text-4xl font-bold mb-4" style="color:#222;">{{ featured_post.title }}</h1>
+                    <p class="text-lg opacity-90 mb-6 line-clamp-3" style="color:#222;">{{ featured_post.excerpt }}</p>
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center text-sm opacity-80">
+                        <div class="flex items-center text-sm opacity-80" style="color:#222;">
                             <i class="fas fa-calendar-alt mr-2"></i>
                             {{ featured_post.created_at|date:"d/m/Y" }}
                             <i class="fas fa-user ml-4 mr-2"></i>
                             {{ featured_post.author.get_full_name|default:featured_post.author.username }}
                         </div>
-                        <a href="{{ featured_post.get_absolute_url }}" 
-                           class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                        <span class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                             Ler Artigo <i class="fas fa-arrow-right ml-2"></i>
-                        </a>
+                        </span>
                     </div>
                 </div>
             </div>
-        </div>
+    </div>
+    </a>
     </section>
     {% endif %}
 
@@ -73,7 +74,8 @@
     <!-- Grade de Artigos -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
         {% for post in posts %}
-        <article class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+        <a href="{{ post.get_absolute_url }}" style="text-decoration:none;">
+        <article class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden cursor-pointer">
             <div class="relative">
                 {% if post.cover_image %}
                     <img src="{{ post.cover_image.url }}" alt="{{ post.title }}" 
@@ -83,21 +85,17 @@
                         <i class="fas fa-file-alt text-4xl text-white opacity-50"></i>
                     </div>
                 {% endif %}
-                
                 {% if post.category %}
                     <span class="absolute top-3 left-3 bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold">
                         {{ post.category.name }}
                     </span>
                 {% endif %}
             </div>
-            
             <div class="p-5">
-                <h3 class="font-bold text-lg mb-2 line-clamp-2 hover:text-blue-600">
-                    <a href="{{ post.get_absolute_url }}">{{ post.title }}</a>
+                <h3 class="font-bold text-lg mb-2 line-clamp-2 hover:text-blue-600" style="color:#222;">
+                    {{ post.title }}
                 </h3>
-                
                 <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ post.excerpt }}</p>
-                
                 <div class="flex items-center justify-between text-xs text-gray-500">
                     <div class="flex items-center">
                         <i class="fas fa-calendar-alt mr-1"></i>
@@ -108,13 +106,9 @@
                         {{ post.author.get_full_name|default:post.author.username }}
                     </div>
                 </div>
-                
-                <a href="{{ post.get_absolute_url }}" 
-                   class="inline-block w-full text-center bg-blue-600 text-white px-4 py-2 rounded-lg mt-4 hover:bg-blue-700 transition-colors">
-                    Ler Mais
-                </a>
             </div>
         </article>
+        </a>
         {% empty %}
         <div class="col-span-full text-center py-12">
             <i class="fas fa-newspaper text-6xl text-gray-300 mb-4"></i>
